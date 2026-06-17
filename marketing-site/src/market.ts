@@ -2,6 +2,7 @@
 // Pixel item sprites are stamped from the Sprout Lands pack; the cat/dog/bunny are
 // the extension's own sprite sheets. Showcase only — no cart, no real money.
 import { TILES, type TileName, placeTile } from './scene/tileset'
+import { daypart } from './daypart'
 import catUrl from './assets/sprites/cat.png'
 import dogUrl from './assets/sprites/dog.png'
 import bunnyUrl from './assets/sprites/bunny.png'
@@ -81,6 +82,73 @@ function buildGrows(): void {
   art.append(tree, coop, bed)
   abs(renderPet(art, 'dog', 2, true), { left: '40%', bottom: '14%' })
   abs(renderPet(art, 'bunny', 2, true), { left: '56%', bottom: '12%' })
+
+  // crops that sprout up from the soil as the section scrolls into view (idea #4)
+  const crops: TileName[] = ['flower', 'bush', 'sunflower', 'flower', 'pumpkin']
+  const cropEls = crops.map((t, i) => {
+    const c = el('div', 'crop')
+    placeTile(c, t, 2)
+    abs(c, { left: `${9 + i * 17}%`, bottom: '6%', transformOrigin: 'bottom center' })
+    c.style.setProperty('--i', String(i))
+    art.appendChild(c)
+    return c
+  })
+  if (reduced) {
+    cropEls.forEach((c) => c.classList.add('grown'))
+  } else {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const en of entries) {
+          if (en.isIntersecting) {
+            cropEls.forEach((c) => c.classList.add('grown'))
+            io.disconnect()
+          }
+        }
+      },
+      { threshold: 0.4 },
+    )
+    io.observe(art)
+  }
+}
+
+// §4 — Pip comments on the gentle loop; chips swap his note on hover/focus.
+function buildPipNote(): void {
+  const note = document.getElementById('pip-note')
+  if (!note) return
+  const def = note.textContent ?? ''
+  document.querySelectorAll<HTMLElement>('.section--biscuits .habit[data-note]').forEach((chip) => {
+    const show = () => (note.textContent = chip.dataset.note ?? def)
+    const reset = () => (note.textContent = def)
+    chip.addEventListener('mouseenter', show)
+    chip.addEventListener('focus', show)
+    chip.addEventListener('mouseleave', reset)
+    chip.addEventListener('blur', reset)
+  })
+}
+
+// §4 — the "earn" coin flips once when the loop scrolls into view.
+function buildCoinReveal(): void {
+  if (reduced) return
+  const coin = document.querySelector<HTMLElement>('.habit--earn .coin')
+  if (!coin) return
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const en of entries) {
+        if (en.isIntersecting) {
+          coin.classList.add('coin--flip')
+          io.disconnect()
+        }
+      }
+    },
+    { threshold: 0.6 },
+  )
+  io.observe(coin)
+}
+
+// footer sign-off uses the same time word as the hero greeting (one breath of day).
+function setFooterWhen(): void {
+  const w = document.getElementById('footer-when')
+  if (w) w.textContent = daypart().signoff
 }
 
 // ---- §5 seasons ----
@@ -209,4 +277,7 @@ export function initSections(): void {
   buildGrows()
   buildSeasons()
   buildMarket()
+  buildPipNote()
+  buildCoinReveal()
+  setFooterWhen()
 }

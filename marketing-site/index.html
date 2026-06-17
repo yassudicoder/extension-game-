@@ -64,6 +64,7 @@
 
         <div class="hero__content">
           <div class="sign">
+            <p class="sign__greeting" id="sign-greeting"></p>
             <p class="sign__eyebrow">a browser companion</p>
             <h1 class="sign__title">Keep a little farm in your browser.</h1>
             <p class="sign__lead">
@@ -127,13 +128,22 @@
             yourself, and you look after the farm.
           </p>
           <div class="loop">
-            <div class="habit"><span class="habit__i">💧</span>drink water</div>
-            <div class="habit"><span class="habit__i">🌿</span>take a break</div>
-            <div class="habit"><span class="habit__i">🌙</span>sleep well</div>
-            <div class="habit"><span class="habit__i">💛</span>pet your friend</div>
+            <div class="habit" tabindex="0" data-note="— Pip: a full bowl means a better nap later.">
+              <span class="habit__i" aria-hidden="true">💧</span>drink water
+            </div>
+            <div class="habit" tabindex="0" data-note="— Pip: stretch with me? I’m very good at it.">
+              <span class="habit__i" aria-hidden="true">🌿</span>take a break
+            </div>
+            <div class="habit" tabindex="0" data-note="— Pip: naps are research. I do a lot of research.">
+              <span class="habit__i" aria-hidden="true">🌙</span>sleep well
+            </div>
+            <div class="habit" tabindex="0" data-note="— Pip: ahh, right there. *purrs in Biscuits.*">
+              <span class="habit__i" aria-hidden="true">💛</span>pet your friend
+            </div>
             <div class="loop__arrow" aria-hidden="true">→</div>
             <div class="habit habit--earn"><span class="coin" aria-hidden="true"></span>earn Biscuits</div>
           </div>
+          <p class="pip-note" id="pip-note" aria-live="polite">— Pip: I get the comfy chair when you take yours.</p>
           <p class="fineprint">No streaks to break, no guilt — miss a day and your friend is still glad to see you.</p>
         </div>
       </section>
@@ -174,10 +184,11 @@
         <div class="wrap trust">
           <p class="kicker">yours alone</p>
           <h2>Lives on your computer. Full stop.</h2>
-          <p class="section-lead">
-            No account, no sign-in, no tracking, no servers phoning home. Your farm and your habits
-            stay on your machine — Pocket Pet just keeps you gentle company while you work.
-          </p>
+          <div class="notices">
+            <p class="notice">No account — we never asked your name.</p>
+            <p class="notice">No tracking — nobody’s watching the farm but you.</p>
+            <p class="notice">No servers — it all stays on your own machine.</p>
+          </div>
           <a class="btn btn--primary btn--lg" href="#">Add to Chrome — it’s free</a>
           <p class="fineprint">Free · open about its data · uninstall anytime, no hard feelings.</p>
         </div>
@@ -185,6 +196,9 @@
     </main>
 
     <footer class="site-footer">
+      <p class="footer-signoff">
+        Thanks for visiting the farm <span id="footer-when">today</span>. The gate’s never locked.
+      </p>
       <p>Made with care on a small farm. · <a href="#">Privacy</a> · <a href="#">GitHub</a></p>
       <p class="credit">
         Farm pixel art:

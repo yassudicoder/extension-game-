@@ -229,6 +229,14 @@
 .sign::after {
   right: 16%;
 }
+.sign__greeting {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--poppy-deep);
+  min-height: 1.2em; /* reserved so the clock greeting causes no layout shift */
+  margin-bottom: 4px;
+}
 .sign__eyebrow {
   font-family: var(--font-display);
   font-weight: 600;
@@ -308,6 +316,46 @@
 :root[data-time='night'] .daynight__knob {
   left: 27px;
   background: radial-gradient(circle at 62% 36%, #fff, #e7ecff);
+}
+
+/* a little pixel heart, floated up when you pet the cat */
+.pp-heart {
+  position: absolute;
+  width: 15px;
+  height: 14px;
+  background: var(--poppy);
+  clip-path: path('M7.5 13 C1 8.5 1.5 3 4.3 3 C6 3 7 4.5 7.5 5.3 C8 4.5 9 3 10.7 3 C13.5 3 14 8.5 7.5 13 Z');
+  transform: translate(-50%, 0);
+  pointer-events: none;
+  z-index: 11;
+  animation: pp-heart-rise 700ms ease-out forwards;
+}
+.pp-heart--calm {
+  animation: pp-heart-fade 700ms ease-out forwards;
+}
+@keyframes pp-heart-rise {
+  0% {
+    transform: translate(-50%, 0) scale(0.5);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -30px) scale(1);
+    opacity: 0;
+  }
+}
+@keyframes pp-heart-fade {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 @keyframes twinkle {
