@@ -54,13 +54,16 @@ describe('forgiving guarantees', () => {
 })
 
 describe('time-based decay is independent of tick count', () => {
-  it('one big tick == many small ticks over the same span', () => {
+  it('one big tick == many small ticks over the same span (SW suspension is harmless)', () => {
     const start = defaultState(T0)
     const oneBig = applyTick(start, T0 + 6 * HOUR)
 
     let many = start
     for (let i = 1; i <= 36; i++) many = applyTick(many, T0 + i * 10 * MINUTE) // 36 * 10min = 6h
-    expect(many.stats.wellbeing).toBeCloseTo(oneBig.stats.wellbeing, 0)
+    // identical: rest is linear+clamped and hydration is closed-form, so cadence
+    // cannot change the outcome.
+    expect(many.stats.wellbeing).toBe(oneBig.stats.wellbeing)
+    expect(many.stats.rest).toBe(oneBig.stats.rest)
   })
 })
 
@@ -178,7 +181,8 @@ describe('mood & copy are never punishing', () => {
   })
 
   it('petting nudges up but is small and capped', () => {
-    let s = { ...defaultState(T0), stats: { hydration: 70, rest: 70, wellbeing: 70 } }
+    // normalise first so `before` is the derived value, then pet.
+    let s = applyTick({ ...defaultState(T0), stats: { hydration: 40, rest: 70, wellbeing: 0 } }, T0)
     const before = s.stats.wellbeing
     s = applyPet(s, T0)
     expect(s.stats.wellbeing).toBeGreaterThanOrEqual(before)

@@ -25,7 +25,6 @@ export const OVERLAY_CSS = /* css */ `
     cursor: grab;
     touch-action: none;
     -webkit-tap-highlight-color: transparent;
-    transition: transform 0.5s ease-out;
     will-change: transform;
     filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.18));
   }

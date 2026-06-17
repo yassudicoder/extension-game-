@@ -12,13 +12,19 @@ import {
 //
 // Guarantees enforced here (and covered by unit tests):
 //   1. Wellbeing is ALWAYS clamped to [WELLBEING_FLOOR, 100]. It can never reach a
-//      "distress"/zero state. There is no death and no sickness.
-//   2. Wellbeing RISES EASILY (large fraction of the gap closed per hour when the
-//      target is above current) and DECAYS SLOWLY + GENTLY (a small fraction per
-//      hour when below).
-//   3. All decay is computed from elapsed wall-clock time (now - lastTickAt), NOT
-//      from a count of ticks — so a suspended/killed service worker never changes
-//      the outcome. Missing a tick is harmless.
+//      "distress"/zero state. There is no death and no sickness. In practice it
+//      doesn't even approach the floor under neglect — it settles around the low
+//      50s — but the clamp is a hard guarantee.
+//   2. Wellbeing is a PURE function of two inputs:
+//        - hydration: derived directly from the (timestamped) water log,
+//        - rest: a gentle reservoir that recovers while resting and ebbs slowly
+//          while continuously active.
+//      Because both inputs are computed from elapsed wall-clock time (never from a
+//      count of ticks), the result is identical whether the service worker ticked
+//      every 5 minutes or was suspended for hours. Missing a tick is harmless.
+//   3. It RISES EASILY (water instantly lifts hydration; rest recovers at 12/hr)
+//      and DECAYS SLOWLY + GENTLY (rest ebbs at only 6/hr; hydration can't fall
+//      below a kind baseline) — so the most it can drift down is a few points/hour.
 //   4. Resting (sleep / idle / locked) is GOOD: it recovers rest and is never
 //      penalised.
 //
@@ -31,17 +37,17 @@ const HYDRATION_BASE = 40 // hydration with no recent water (gentle, never 0)
 const HYDRATION_PER_WATER = 22 // peak contribution of one fresh glass
 
 const REST_FLOOR = 45
+const REST_CEIL = 100
 const REST_RECOVER_PER_HOUR = 12 // while resting
 const REST_DECAY_PER_HOUR = 6 // while continuously active
 
-const RISE_K = 2.5 // wellbeing approach rate when improving (fast)
-const DECAY_K = 0.12 // wellbeing approach rate when declining (slow + gentle)
+// wellbeing = blend of the two inputs (kept symmetric; the asymmetry of "rises
+// fast, falls slow" comes from the inputs themselves).
+const W_HYDRATION = 0.5
+const W_REST = 0.5
 
-const WATER_WELLBEING_BONUS = 6 // immediate visible reward for logging water
-const PET_WELLBEING_BONUS = 2 // small affection nudge (capped, not a grind)
-
-const BREAK_MIN_MS = 3 * MINUTE // a rest this long or longer counts as a "break" win
-
+const PET_REST_BONUS = 4 // affection is restful (small, naturally capped by REST_CEIL)
+const BREAK_MIN_MS = 3 * MINUTE // a rest at least this long counts as a "break" win
 const HISTORY_MAX = 60 // keep ~2 months of daily rollups
 
 // ---- tiny helpers ----
@@ -64,15 +70,17 @@ export function computeHydration(waterLog: number[], now: number): number {
   return clamp(score, 0, 100)
 }
 
-/**
- * Move `current` toward `target` over `hours`, fast when rising and slow when
- * falling. Exponential approach so it never overshoots.
- */
-function approach(current: number, target: number, hours: number): number {
-  const gap = target - current
-  if (gap === 0 || hours <= 0) return current
-  const k = gap > 0 ? RISE_K : DECAY_K
-  return current + gap * (1 - Math.exp(-k * hours))
+/** Wellbeing as a pure blend of hydration + rest. Always within [FLOOR, MAX]. */
+export function deriveWellbeing(hydration: number, rest: number): number {
+  return clamp(round(W_HYDRATION * hydration + W_REST * rest), WELLBEING_FLOOR, WELLBEING_MAX)
+}
+
+/** Integrate rest over `hours` of constant activity (linear, clamped). */
+function stepRest(rest: number, hours: number, resting: boolean): number {
+  const next = resting
+    ? rest + REST_RECOVER_PER_HOUR * hours
+    : rest - REST_DECAY_PER_HOUR * hours
+  return clamp(next, REST_FLOOR, REST_CEIL)
 }
 
 /** Roll the "today's wins" counter and append a history entry when the day changes. */
@@ -95,9 +103,9 @@ function rolloverIfNeeded(s: PetState, now: number): PetState {
 }
 
 /**
- * The integrator. Brings the state up to `now`: prunes the water log, recomputes
- * hydration + rest from elapsed time, eases wellbeing toward its target, rolls the
- * day over, and re-anchors lastTickAt. Safe to call any number of times.
+ * Bring the state up to `now`: prune the water log, recompute hydration, ebb/recover
+ * rest for the elapsed time, derive wellbeing, roll the day over, re-anchor
+ * lastTickAt. Idempotent and cadence-independent — safe to call any number of times.
  */
 export function applyTick(state: PetState, now: number): PetState {
   let s = rolloverIfNeeded(state, now)
@@ -106,47 +114,39 @@ export function applyTick(state: PetState, now: number): PetState {
   s = { ...s, waterLog: s.waterLog.filter((t) => t <= now && now - t <= HYDRATION_WINDOW) }
 
   const hydration = computeHydration(s.waterLog, now)
-
-  const resting = isResting(s)
-  let rest = s.stats.rest
-  rest = resting
-    ? Math.min(100, rest + REST_RECOVER_PER_HOUR * hours)
-    : Math.max(REST_FLOOR, rest - REST_DECAY_PER_HOUR * hours)
-
-  const target = clamp(0.5 * hydration + 0.5 * rest, WELLBEING_FLOOR, WELLBEING_MAX)
-  const wellbeing = clamp(approach(s.stats.wellbeing, target, hours), WELLBEING_FLOOR, WELLBEING_MAX)
+  const rest = stepRest(s.stats.rest, hours, isResting(s))
+  const wellbeing = deriveWellbeing(hydration, rest)
 
   return {
     ...s,
-    stats: { hydration: round(hydration), rest: round(rest), wellbeing: round(wellbeing) },
+    stats: { hydration: round(hydration), rest: round(rest), wellbeing },
     lastTickAt: now,
   }
 }
 
-/** Log a glass of water: instant hydration + a small visible wellbeing bump. */
+/** Log a glass of water: instantly lifts hydration (and therefore wellbeing). */
 export function applyWater(state: PetState, now: number): PetState {
   const s = applyTick(state, now)
   const waterLog = [...s.waterLog, now]
   const hydration = computeHydration(waterLog, now)
-  const wellbeing = clamp(s.stats.wellbeing + WATER_WELLBEING_BONUS, WELLBEING_FLOOR, WELLBEING_MAX)
   return {
     ...s,
     waterLog,
     lastWaterAt: now,
     snoozeUntil: null,
     lastNudgeAt: null, // drinking clears any pending nudge
-    stats: { ...s.stats, hydration: round(hydration), wellbeing: round(wellbeing) },
+    stats: { ...s.stats, hydration: round(hydration), wellbeing: deriveWellbeing(hydration, s.stats.rest) },
     todaysWins: { ...s.todaysWins, water: s.todaysWins.water + 1 },
   }
 }
 
-/** Pet the pet: a small, capped affection nudge. */
+/** Pet the pet: a small, naturally-capped affection bump (via rest). */
 export function applyPet(state: PetState, now: number): PetState {
   const s = applyTick(state, now)
-  const wellbeing = clamp(s.stats.wellbeing + PET_WELLBEING_BONUS, WELLBEING_FLOOR, WELLBEING_MAX)
+  const rest = clamp(s.stats.rest + PET_REST_BONUS, REST_FLOOR, REST_CEIL)
   return {
     ...s,
-    stats: { ...s.stats, wellbeing: round(wellbeing) },
+    stats: { ...s.stats, rest: round(rest), wellbeing: deriveWellbeing(s.stats.hydration, rest) },
     todaysWins: { ...s.todaysWins, pets: s.todaysWins.pets + 1 },
   }
 }

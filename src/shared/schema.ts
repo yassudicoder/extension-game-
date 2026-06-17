@@ -14,7 +14,7 @@ export const ANIMAL_LABELS: Record<Animal, string> = {
 
 // ---- wellbeing tuning (all gentle + forgiving by construction) ----
 export const WELLBEING_FLOOR = 30 // hard floor; the pet never drops into distress
-export const WELLBEING_START = 72
+export const WELLBEING_START = 70 // a fresh, well-rested pet (= blend of the defaults below)
 export const WELLBEING_MAX = 100
 
 // ---- reminders ----
@@ -30,7 +30,9 @@ export function defaultState(now: number): PetState {
     animal: 'cat',
     position: { corner: 'br', dx: 24, dy: 24 },
     hidden: false,
-    stats: { hydration: 70, rest: 70, wellbeing: WELLBEING_START },
+    // hydration starts at its no-water baseline; rest starts full, so the derived
+    // wellbeing = 0.5*40 + 0.5*100 = 70 (a calm, content new pet).
+    stats: { hydration: 40, rest: 100, wellbeing: WELLBEING_START },
     lastWaterAt: null,
     waterLog: [],
     sleepMode: false,
