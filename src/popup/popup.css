@@ -750,6 +750,37 @@ input[type='range']::-webkit-slider-thumb {
 .reset:focus-visible {
   outline: 2px solid var(--coral);
 }
+
+/* two-tap reset confirm (destructive action, gently guarded) */
+.reset-confirm {
+  margin-top: 12px;
+  text-align: center;
+}
+.reset-confirm > span {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--cocoa-soft);
+  margin-bottom: 8px;
+}
+.reset-actions {
+  display: flex;
+  gap: 10px;
+}
+.reset-actions .reset {
+  margin-top: 0;
+  flex: 1;
+  width: auto;
+}
+.reset-yes {
+  color: var(--coral-deep);
+}
+.reset-keep {
+  color: var(--cocoa-soft);
+}
+.reset-keep:hover {
+  background: var(--cream-deep);
+}
 .footer {
   text-align: center;
   font-size: 10.5px;

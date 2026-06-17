@@ -66,6 +66,7 @@ function ComfyHeart({ value }: { value: number }) {
 export function App() {
   const { state, act } = usePetState()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [confirmReset, setConfirmReset] = useState(false)
   const [reminderDraft, setReminderDraft] = useState(DEFAULT_REMINDER_MIN)
 
   const petRef = useRef<HTMLButtonElement>(null)
@@ -306,9 +307,29 @@ export function App() {
           </label>
         </div>
 
-        <button className="reset" onClick={() => void act({ type: MSG.RESET })}>
-          start fresh — {PET_NAMES[animal]} stays happy 💛
-        </button>
+        {!confirmReset ? (
+          <button className="reset" onClick={() => setConfirmReset(true)}>
+            start fresh — {PET_NAMES[animal]} stays happy 💛
+          </button>
+        ) : (
+          <div className="reset-confirm">
+            <span>start fresh? {PET_NAMES[animal]} stays happy 💛</span>
+            <div className="reset-actions">
+              <button
+                className="reset reset-yes"
+                onClick={() => {
+                  void act({ type: MSG.RESET })
+                  setConfirmReset(false)
+                }}
+              >
+                yes, reset
+              </button>
+              <button className="reset reset-keep" onClick={() => setConfirmReset(false)}>
+                keep my pet
+              </button>
+            </div>
+          </div>
+        )}
         <div className="footer">Pocket Pet · be kind to yourself today</div>
       </div>
     </div>
