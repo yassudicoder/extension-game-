@@ -1,0 +1,6 @@
+node_modules/
+dist/
+*.local
+.DS_Store
+# Generated icons (run `npm run icons` or `npm run build` to recreate)
+src/assets/icons/*.png
