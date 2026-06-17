@@ -80,26 +80,30 @@ svg {
 .wordmark {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 1.3rem;
+  font-size: 1.15rem;
   text-decoration: none;
   color: var(--bark);
-  transition: color 1s var(--ease);
+  background: var(--linen-soft);
+  border: 3px solid var(--barn);
+  border-radius: 9px;
+  padding: 6px 13px;
+  box-shadow:
+    0 0 0 2px var(--barn-roof),
+    var(--shadow-soft);
 }
 .wordmark__mark {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   filter: drop-shadow(0 2px 1px rgba(59, 46, 38, 0.25));
-}
-:root[data-time='night'] .wordmark {
-  color: var(--linen);
 }
 
 /* ---- buttons ---- */
 .btn {
   --btn-bg: var(--poppy);
+  --btn-edge: var(--poppy-deep);
   --btn-ink: var(--linen-soft);
   display: inline-flex;
   align-items: center;
@@ -110,43 +114,64 @@ svg {
   font-size: 1.05rem;
   line-height: 1;
   text-decoration: none;
-  padding: 0.85em 1.4em;
+  padding: 0.8em 1.35em;
   border: 0;
-  border-radius: 999px;
+  border-radius: 7px; /* squared + crafted, not a slick pill */
   background: var(--btn-bg);
   color: var(--btn-ink);
   cursor: pointer;
+  /* a chunky "block" with a 3D wooden bottom edge */
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.3) inset,
-    0 12px 22px -12px rgba(168, 59, 73, 0.8);
+    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+    0 5px 0 var(--btn-edge),
+    0 11px 16px -8px rgba(168, 59, 73, 0.55);
   transition:
-    transform 0.12s var(--ease),
-    box-shadow 0.2s var(--ease),
+    transform 0.1s var(--ease),
+    box-shadow 0.1s var(--ease),
     background 0.2s var(--ease);
 }
 .btn:hover {
-  transform: translateY(-2px);
   background: var(--poppy-deep);
+  --btn-edge: #8f2f3c;
 }
 .btn:active {
-  transform: translateY(0);
+  transform: translateY(4px); /* press the block down */
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.3),
+    0 1px 0 var(--btn-edge),
+    0 4px 8px -6px rgba(168, 59, 73, 0.5);
 }
 .btn--sm {
   font-size: 0.95rem;
-  padding: 0.6em 1.1em;
+  padding: 0.55em 1em;
 }
 
-/* ---- footer (slim for now; farm-styled in a later phase) ---- */
+/* ---- footer — a little wooden board with a picket fence on top ---- */
 .site-footer {
-  background: var(--meadow-deep);
+  position: relative;
+  background: linear-gradient(180deg, #b9874f, var(--oak-deep));
   color: var(--linen-soft);
   text-align: center;
-  padding: 28px 16px;
+  padding: 40px 16px 28px;
   font-size: var(--fs-200);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.12);
+}
+.site-footer::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -13px;
+  height: 15px;
+  background: repeating-linear-gradient(90deg, #caa06a 0 10px, transparent 10px 28px);
 }
 .site-footer a {
-  color: var(--wheat);
+  color: var(--linen-soft);
   text-underline-offset: 3px;
+}
+.site-footer .credit {
+  margin-top: 6px;
+  opacity: 0.85;
 }
 
 @media (prefers-reduced-motion: reduce) {

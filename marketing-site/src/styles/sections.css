@@ -1,0 +1,378 @@
+/* ============================================================================
+   Below-the-hero sections + the farm market. Same palette/type as the hero; the
+   page warms from daylight down toward a calm night at the closing CTA (the farm's
+   day winding down as you scroll).
+   ============================================================================ */
+
+.section {
+  padding: clamp(56px, 9vh, 110px) 0;
+}
+.wrap {
+  width: min(100% - 40px, 1100px);
+  margin-inline: auto;
+}
+.kicker {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: lowercase;
+  color: var(--poppy);
+  font-size: var(--fs-200);
+  margin-bottom: 10px;
+}
+.section h2 {
+  font-size: var(--fs-700);
+  color: var(--bark);
+  max-width: 18ch;
+  text-wrap: balance;
+}
+.section-lead {
+  font-size: var(--fs-400);
+  color: var(--bark-soft);
+  max-width: 56ch;
+  margin-top: 0.7em;
+}
+.fineprint {
+  margin-top: 1.6em;
+  font-size: var(--fs-200);
+  color: var(--bark-soft);
+}
+
+/* section backgrounds — daylight easing toward dusk/night down the page */
+.section--meet {
+  background: linear-gradient(180deg, var(--sky-high), var(--linen-soft));
+}
+.section--grows {
+  background: var(--linen-soft);
+}
+.section--biscuits {
+  background: linear-gradient(180deg, #fbf2d6, var(--linen-soft));
+}
+.section--seasons {
+  background: linear-gradient(180deg, #f6e2b4, #efd9b0);
+}
+.section--market {
+  background: linear-gradient(180deg, #e8d3ad, #d9bd8f);
+}
+.section--trust {
+  background: linear-gradient(180deg, var(--plum), var(--plum-deep));
+  text-align: center;
+}
+.section--trust .kicker {
+  color: var(--lantern);
+}
+.section--trust h2,
+.section--trust .section-lead,
+.section--trust .fineprint {
+  color: var(--linen-soft);
+}
+.section--trust h2 {
+  margin-inline: auto;
+}
+.section--trust .section-lead {
+  margin-inline: auto;
+}
+
+/* ---- §2 residents ---- */
+.residents-row {
+  margin-top: 36px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 18px;
+}
+.resident {
+  background: var(--linen-soft);
+  border: 4px solid var(--barn);
+  border-radius: 12px;
+  box-shadow:
+    0 0 0 2px var(--barn-roof),
+    var(--shadow-soft);
+  padding: 20px;
+  text-align: center;
+}
+.resident__art {
+  height: 104px;
+  display: grid;
+  place-items: end center;
+  margin-bottom: 8px;
+}
+.resident h3 {
+  font-size: var(--fs-500);
+  color: var(--bark);
+}
+.resident .trait {
+  font-size: var(--fs-200);
+  font-weight: 700;
+  color: var(--poppy);
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+}
+.resident p {
+  font-size: 0.95rem;
+  color: var(--bark-soft);
+  margin-top: 6px;
+}
+
+/* ---- §3 split ---- */
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(24px, 5vw, 60px);
+  align-items: center;
+}
+.split__art {
+  position: relative;
+  min-height: 280px;
+  border-radius: 16px;
+  border: 4px solid var(--barn);
+  box-shadow:
+    0 0 0 2px var(--barn-roof),
+    var(--shadow-soft);
+  background: linear-gradient(180deg, var(--sky), var(--meadow-shade) 64%, var(--meadow));
+  overflow: hidden;
+}
+.split__text p {
+  color: var(--bark-soft);
+  margin-top: 0.9em;
+  max-width: 46ch;
+}
+.split__text p:first-of-type {
+  margin-top: 1.1em;
+}
+
+/* ---- §4 the loop ---- */
+.loop {
+  margin-top: 34px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+.habit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: var(--linen-soft);
+  border: 3px solid var(--barn);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--bark);
+  min-width: 96px;
+}
+.habit__i {
+  font-size: 24px;
+  line-height: 1;
+}
+.habit--earn {
+  background: var(--wheat);
+  border-color: var(--wheat-deep);
+  color: #6e4f1c;
+}
+.loop__arrow {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: var(--bark-soft);
+}
+.coin {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 36%, #ffe9b0, var(--wheat) 66%, var(--wheat-deep));
+  box-shadow:
+    inset 0 0 0 2px rgba(180, 130, 40, 0.5),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ---- §5 seasons ---- */
+.season-strip {
+  margin-top: 32px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+}
+.season {
+  background: var(--linen-soft);
+  border: 3px solid var(--barn);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+.season__art {
+  height: 80px;
+  display: grid;
+  place-items: center;
+}
+.season b {
+  display: block;
+  font-family: var(--font-display);
+  color: var(--bark);
+  margin-top: 4px;
+}
+.season span {
+  font-size: var(--fs-200);
+  color: var(--bark-soft);
+}
+
+/* ---- §6 the market ---- */
+.market {
+  margin-top: 30px;
+  background: linear-gradient(180deg, #c79a5f, var(--oak-deep));
+  border: 5px solid var(--barn-roof);
+  border-radius: 16px;
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.18),
+    var(--shadow-sign);
+  padding: clamp(16px, 3vw, 28px);
+}
+.market__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.tab {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--bark);
+  background: var(--linen-soft);
+  border: 3px solid var(--barn);
+  border-radius: 9px;
+  padding: 7px 14px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--barn-roof);
+  transition:
+    transform 0.1s var(--ease),
+    background 0.15s var(--ease);
+}
+.tab:hover {
+  transform: translateY(-1px);
+}
+.tab[aria-selected='true'] {
+  background: var(--wheat);
+  border-color: var(--wheat-deep);
+  box-shadow: 0 3px 0 var(--wheat-deep);
+}
+.tab:focus-visible {
+  outline: 3px solid var(--poppy);
+  outline-offset: 2px;
+}
+.market__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 14px;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--linen-soft);
+  border: 3px solid var(--barn);
+  border-radius: 12px;
+  box-shadow: 0 4px 0 var(--barn-roof);
+  padding: 14px;
+  transition:
+    transform 0.12s var(--ease),
+    box-shadow 0.12s var(--ease);
+}
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 7px 0 var(--barn-roof),
+    var(--shadow-soft);
+}
+.card--lg {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+.card__art {
+  flex: 1;
+  min-height: 92px;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 70%, rgba(124, 160, 94, 0.22), transparent 70%);
+  border-radius: 8px;
+}
+.card--lg .card__art {
+  min-height: 150px;
+}
+.card__name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--bark);
+  margin-top: 10px;
+}
+.card__flavor {
+  font-size: 0.85rem;
+  color: var(--bark-soft);
+  margin-top: 2px;
+  line-height: 1.45;
+}
+.card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+.price {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: #6e4f1c;
+}
+.price .coin {
+  width: 18px;
+  height: 18px;
+}
+.tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: #fff;
+}
+.tag--new {
+  background: var(--meadow-deep);
+}
+.tag--festival {
+  background: var(--poppy);
+}
+.tag--rare {
+  background: #7a5bb0;
+}
+.tag--soon {
+  background: var(--bark-soft);
+}
+
+/* ---- §7 trust CTA ---- */
+.btn--lg {
+  font-size: 1.25rem;
+  padding: 0.95em 1.7em;
+  margin-top: 0.6em;
+}
+
+@media (max-width: 720px) {
+  .split {
+    grid-template-columns: 1fr;
+  }
+  .card--lg {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab,
+  .card {
+    transition: none;
+  }
+}

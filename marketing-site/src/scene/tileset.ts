@@ -11,6 +11,12 @@ import walls from '../assets/scene/Tilesets/Wooden_House_Walls_Tilset.png'
 import roof from '../assets/scene/Tilesets/Wooden_House_Roof_Tilset.png'
 import biom from '../assets/scene/Objects/Basic_Grass_Biom_things.png'
 import coop from '../assets/scene/Objects/Free_Chicken_House.png'
+import furniture from '../assets/scene/Objects/Basic_Furniture.png'
+import egg from '../assets/scene/Objects/Egg_item.png'
+import milk from '../assets/scene/Objects/Simple_Milk_and_grass_item.png'
+import chest from '../assets/scene/Objects/Chest.png'
+import cow from '../assets/scene/Characters/Free Cow Sprites.png'
+import chicken from '../assets/scene/Characters/Free Chicken Sprites.png'
 
 export const TILE = 16
 export const SCALE = 6
@@ -37,6 +43,12 @@ const WL = mk(walls, 80, 48)
 const RF = mk(roof, 112, 80)
 const B = mk(biom, 144, 80)
 const C = mk(coop, 48, 48)
+const FU = mk(furniture, 144, 96)
+const EG = mk(egg, 16, 16)
+const MK = mk(milk, 64, 16)
+const CHE = mk(chest, 240, 96)
+const CW = mk(cow, 96, 64)
+const CH = mk(chicken, 64, 32)
 
 // TODO(coords): verified against the grid inspector, but the house composition
 // (roof/wall/door rows) may need a refinement pass after the first screenshot.
@@ -56,33 +68,48 @@ export const TILES = {
   wallBot: WL(1, 2, 2, 1), // wall base
   door: D(0, 2, 1, 2), //   door (1×2)
   coop: C(0, 0, 3, 3), //   complete 3×3 coop building (used as the hero homestead)
+
+  // --- market items (cut from the Objects/Characters sheets) ---
+  apple: B(2, 2),
+  pumpkin: B(5, 2),
+  sunflower: B(8, 2),
+  itemBed: FU(0, 3, 1, 2), // green pet bed
+  itemLamp: FU(3, 1), //     table lamp
+  itemPainting: FU(0, 0), // framed picture
+  itemPlant: FU(3, 0), //    potted plant
+  itemRug: FU(0, 5), //      round rug
+  itemClock: FU(5, 3), //    wall clock
+  itemChest: CHE(0, 0, 2, 2), // treasure/supply chest
+  itemEgg: EG(0, 0),
+  itemMilk: MK(0, 0),
+  cow: CW(0, 0, 2, 2), //    cow (upcoming pet)
+  chicken: CH(0, 0, 1, 1), // chicken (upcoming pet)  TODO verify frame
 } as const
 
 export type TileName = keyof typeof TILES
 
-const cssPx = (tiles: number) => tiles * TILE * SCALE
-
 /** Show a tile region in `el` via background-position (no crop; for single props). */
-export function placeTile(el: HTMLElement, name: TileName): void {
+export function placeTile(el: HTMLElement, name: TileName, scale: number = SCALE): void {
   const t = TILES[name]
-  el.style.width = `${cssPx(t.w)}px`
-  el.style.height = `${cssPx(t.h)}px`
+  const px = (n: number) => n * TILE * scale
+  el.style.width = `${px(t.w)}px`
+  el.style.height = `${px(t.h)}px`
   el.style.backgroundImage = `url(${t.sheet})`
   el.style.backgroundRepeat = 'no-repeat'
-  el.style.backgroundSize = `${t.sheetW * SCALE}px ${t.sheetH * SCALE}px`
-  el.style.backgroundPosition = `${-cssPx(t.x)}px ${-cssPx(t.y)}px`
+  el.style.backgroundSize = `${t.sheetW * scale}px ${t.sheetH * scale}px`
+  el.style.backgroundPosition = `${-px(t.x)}px ${-px(t.y)}px`
   el.style.imageRendering = 'pixelated'
 }
 
 /** Crop one tile to a data URL for seamless tiling (the ground). */
-export function cropTileURL(name: TileName): Promise<string> {
+export function cropTileURL(name: TileName, scale: number = SCALE): Promise<string> {
   const t = TILES[name]
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => {
       const c = document.createElement('canvas')
-      c.width = cssPx(t.w)
-      c.height = cssPx(t.h)
+      c.width = t.w * TILE * scale
+      c.height = t.h * TILE * scale
       const g = c.getContext('2d')
       if (!g) return reject(new Error('no 2d context'))
       g.imageSmoothingEnabled = false
