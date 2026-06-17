@@ -12,6 +12,7 @@ import {
   reminderDue,
   applyBreakSettings,
   breakDue,
+  applyTimeTrickle,
   computeHydration,
   computeNourishment,
   petMood,
@@ -221,6 +222,47 @@ describe('break breather', () => {
   })
 })
 
+describe('biscuits (currency)', () => {
+  it('awards the right amount per win', () => {
+    expect(applyWater(defaultState(T0), T0).biscuits).toBe(3)
+    expect(applyFeed(defaultState(T0), T0).biscuits).toBe(2)
+    expect(applyPet(defaultState(T0), T0).biscuits).toBe(1)
+    let s = applyActivity(defaultState(T0), T0, 'idle')
+    s = applyActivity(s, T0 + 30 * MINUTE, 'active') // a real break
+    expect(s.biscuits).toBe(5)
+  })
+
+  it('rewards a real night-time good-night once per day', () => {
+    const night = new Date('2026-06-17T23:30:00').getTime()
+    let s = applySleep(defaultState(night), night, true)
+    expect(s.biscuits).toBe(5)
+    s = applySleep(s, night + MINUTE, false)
+    s = applySleep(s, night + 2 * MINUTE, true) // same night → no double pay
+    expect(s.biscuits).toBe(5)
+  })
+
+  it('does not pay the night bonus during the day', () => {
+    const day = new Date('2026-06-17T14:00:00').getTime()
+    expect(applySleep(defaultState(day), day, true).biscuits).toBe(0)
+  })
+
+  it('time trickle pays while active, caps at 20/day, and resets the next day', () => {
+    let s = defaultState(T0) // active by default
+    for (let i = 0; i < 30; i++) s = applyTimeTrickle(s, T0 + i * 5 * MINUTE)
+    expect(s.earnedTodayFromTime).toBe(20)
+    expect(s.biscuits).toBe(20)
+    s = applyTimeTrickle(s, T0 + DAY) // new day → cap resets, trickle resumes
+    expect(s.earnedTodayFromTime).toBe(1)
+    expect(s.biscuits).toBe(21)
+  })
+
+  it('never trickles while idle or asleep, and never goes negative', () => {
+    expect(applyTimeTrickle({ ...defaultState(T0), activityState: 'idle' }, T0).biscuits).toBe(0)
+    expect(applyTimeTrickle({ ...defaultState(T0), sleepMode: true }, T0).biscuits).toBe(0)
+    expect(defaultState(T0).biscuits).toBeGreaterThanOrEqual(0)
+  })
+})
+
 describe('migrate validates stored data', () => {
   it('falls back to defaults for a corrupt animal / corner', () => {
     const fixed = migrate({ animal: 'dragon', position: { corner: 'xx', dx: 5, dy: 5 } }, T0)
@@ -237,6 +279,21 @@ describe('migrate validates stored data', () => {
   it('seeds installedAt from an existing user’s lastTickAt', () => {
     const migrated = migrate({ lastTickAt: T0 - 5 * DAY }, T0)
     expect(migrated.installedAt).toBe(T0 - 5 * DAY)
+  })
+
+  it('defaults the economy/collection fields for an old stored object', () => {
+    const m = migrate({ animal: 'cat' }, T0)
+    expect(m.biscuits).toBe(0)
+    expect(m.earnedTodayFromTime).toBe(0)
+    expect(m.lastNightBonusDate).toBeNull()
+    expect(m.ownedPets).toEqual(['cat', 'dog', 'bunny'])
+    expect(m.inventory).toEqual({})
+    expect(m.placed).toEqual([])
+  })
+
+  it('sanitises a corrupt ownedPets list (drops unknowns, dedupes)', () => {
+    const m = migrate({ ownedPets: ['cat', 'dragon', 'cat'] }, T0)
+    expect(m.ownedPets).toEqual(['cat'])
   })
 })
 

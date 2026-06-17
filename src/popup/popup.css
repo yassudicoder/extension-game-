@@ -124,8 +124,17 @@ body {
   color: var(--cocoa-soft);
   margin-top: 3px;
 }
-.comfort {
+.crumbs {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 800;
+  font-size: 13px;
+  color: #a0712e;
+}
+.comfort {
+  margin-left: 12px;
   display: flex;
   align-items: center;
   gap: 6px;

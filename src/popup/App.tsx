@@ -158,6 +158,20 @@ export function App() {
           <h1>{PET_NAMES[animal]}</h1>
           <div className="mood">{describeWellbeing(state)}</div>
         </div>
+        <div
+          className="crumbs"
+          title="Biscuits — earn them by caring for your pet"
+          aria-label={`${state.biscuits} biscuits`}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+            <circle cx="7" cy="7" r="6.2" fill="#d9a865" stroke="#b9853f" strokeWidth="1" />
+            <circle cx="5" cy="5.5" r="0.9" fill="#9c6b34" />
+            <circle cx="9" cy="6" r="0.9" fill="#9c6b34" />
+            <circle cx="6" cy="9" r="0.9" fill="#9c6b34" />
+            <circle cx="9.2" cy="9.3" r="0.8" fill="#9c6b34" />
+          </svg>
+          <span>{state.biscuits}</span>
+        </div>
         <div className="comfort">
           <span className="label">comfy</span>
           <ComfyHeart value={state.stats.wellbeing} />

@@ -57,6 +57,16 @@ const PET_REST_BONUS = 4 // affection is restful (small, naturally capped by RES
 const BREAK_MIN_MS = 3 * MINUTE // a rest at least this long counts as a "break" win
 const HISTORY_MAX = 60 // keep ~2 months of daily rollups
 
+// ---- biscuit (currency) rewards ----
+// Self-care earns the most; passive screen time earns least and is capped — a
+// wellness pet shouldn't reward you for staring at the screen instead of resting.
+const BISCUITS_WATER = 3
+const BISCUITS_SNACK = 2
+const BISCUITS_BREAK = 5
+const BISCUITS_PET = 1
+const BISCUITS_NIGHT = 5 // good-night while it's actually late, once per day
+const BISCUITS_TIME_CAP = 20 // max biscuits/day from the passive time trickle
+
 // ---- tiny helpers ----
 export function clamp(v: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, v))
@@ -64,6 +74,8 @@ export function clamp(v: number, lo: number, hi: number): number {
 const round = (v: number) => Math.round(v)
 const isResting = (s: PetState): boolean =>
   s.sleepMode || s.activityState === 'idle' || s.activityState === 'locked'
+/** Add biscuits, never letting the balance go below zero. */
+const addBiscuits = (balance: number, n: number): number => Math.max(0, balance + n)
 
 /** Hydration in [0,100], derived purely from the water log and `now`. */
 export function computeHydration(waterLog: number[], now: number): number {
@@ -122,6 +134,7 @@ function rolloverIfNeeded(s: PetState, now: number): PetState {
     ...s,
     history,
     todaysWins: { date: today, water: 0, snacks: 0, breaks: 0, pets: 0 },
+    earnedTodayFromTime: 0, // reset the daily time-earning cap
   }
 }
 
@@ -174,6 +187,7 @@ export function applyWater(state: PetState, now: number): PetState {
       wellbeing: deriveWellbeing(hydration, s.stats.rest, s.stats.nourishment),
     },
     todaysWins: { ...s.todaysWins, water: s.todaysWins.water + 1 },
+    biscuits: addBiscuits(s.biscuits, BISCUITS_WATER),
   }
 }
 
@@ -194,6 +208,7 @@ export function applyFeed(state: PetState, now: number): PetState {
       wellbeing: deriveWellbeing(s.stats.hydration, s.stats.rest, nourishment),
     },
     todaysWins: { ...s.todaysWins, snacks: s.todaysWins.snacks + 1 },
+    biscuits: addBiscuits(s.biscuits, BISCUITS_SNACK),
   }
 }
 
@@ -209,6 +224,7 @@ export function applyPet(state: PetState, now: number): PetState {
       wellbeing: deriveWellbeing(s.stats.hydration, rest, s.stats.nourishment),
     },
     todaysWins: { ...s.todaysWins, pets: s.todaysWins.pets + 1 },
+    biscuits: addBiscuits(s.biscuits, BISCUITS_PET),
   }
 }
 
@@ -225,17 +241,49 @@ export function applyActivity(state: PetState, now: number, activity: ActivitySt
   const s = applyTick(state, now)
   let todaysWins = s.todaysWins
   let lastBreakAt = s.lastBreakAt
+  let biscuits = s.biscuits
   if (activity === 'active' && wasResting && restedMs >= BREAK_MIN_MS) {
     todaysWins = { ...todaysWins, breaks: todaysWins.breaks + 1 }
     lastBreakAt = now // an actual break resets the breather timer
+    biscuits = addBiscuits(biscuits, BISCUITS_BREAK)
   }
-  return { ...s, activityState: activity, lastActiveAt: now, todaysWins, lastBreakAt }
+  return { ...s, activityState: activity, lastActiveAt: now, todaysWins, lastBreakAt, biscuits }
 }
 
-/** Toggle manual "good night" sleep; schedules an auto-wake for the morning. */
+/** Toggle manual "good night" sleep; schedules an auto-wake, and rewards a real
+ *  night-time good-night once per day. */
 export function applySleep(state: PetState, now: number, on: boolean): PetState {
   const s = applyTick(state, now)
-  return { ...s, sleepMode: on, sleepUntil: on ? nextMorning(now) : null }
+  const today = todayKey(now)
+  let biscuits = s.biscuits
+  let lastNightBonusDate = s.lastNightBonusDate
+  if (on && isNight(now) && lastNightBonusDate !== today) {
+    biscuits = addBiscuits(biscuits, BISCUITS_NIGHT)
+    lastNightBonusDate = today
+  }
+  return {
+    ...s,
+    sleepMode: on,
+    sleepUntil: on ? nextMorning(now) : null,
+    biscuits,
+    lastNightBonusDate,
+  }
+}
+
+/**
+ * Passive currency trickle: +1 biscuit while the user is active and awake, capped
+ * per day. Call ONLY from the periodic service-worker tick (never from applyTick,
+ * which runs on every action and would over-reward).
+ */
+export function applyTimeTrickle(state: PetState, now: number): PetState {
+  const s = rolloverIfNeeded(state, now) // keep the daily cap fresh
+  if (s.sleepMode || s.activityState !== 'active') return s
+  if (s.earnedTodayFromTime >= BISCUITS_TIME_CAP) return s
+  return {
+    ...s,
+    biscuits: addBiscuits(s.biscuits, 1),
+    earnedTodayFromTime: s.earnedTodayFromTime + 1,
+  }
 }
 
 /** Auto-wake from "good night" once the morning target has passed. */

@@ -59,6 +59,12 @@ export function defaultState(now: number): PetState {
     lastTickAt: now,
     todaysWins: { date: todayKey(now), water: 0, snacks: 0, breaks: 0, pets: 0 },
     history: [],
+    biscuits: 0,
+    earnedTodayFromTime: 0,
+    lastNightBonusDate: null,
+    ownedPets: [...ANIMALS],
+    inventory: {},
+    placed: [],
   }
 }
 
@@ -83,6 +89,22 @@ export function migrate(raw: unknown, now: number): PetState {
   // Validate enum-ish fields so a corrupt stored object can't poison the UI.
   if (!ANIMALS.includes(merged.animal)) merged.animal = base.animal
   if (!CORNERS.includes(merged.position.corner)) merged.position = base.position
+
+  // Economy / collection: default + sanitise for older stored objects.
+  merged.biscuits = typeof incoming.biscuits === 'number' ? Math.max(0, incoming.biscuits) : 0
+  merged.earnedTodayFromTime =
+    typeof incoming.earnedTodayFromTime === 'number' ? incoming.earnedTodayFromTime : 0
+  merged.lastNightBonusDate =
+    typeof incoming.lastNightBonusDate === 'string' ? incoming.lastNightBonusDate : null
+  const owned = Array.isArray(incoming.ownedPets)
+    ? incoming.ownedPets.filter((a): a is Animal => ANIMALS.includes(a as Animal))
+    : []
+  merged.ownedPets = owned.length > 0 ? Array.from(new Set(owned)) : [...ANIMALS]
+  merged.inventory =
+    incoming.inventory && typeof incoming.inventory === 'object' && !Array.isArray(incoming.inventory)
+      ? (incoming.inventory as Record<string, number>)
+      : {}
+  merged.placed = Array.isArray(incoming.placed) ? incoming.placed : []
 
   // installedAt: prefer the stored value, else an existing user's lastTickAt, else now.
   merged.installedAt =

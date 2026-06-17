@@ -105,4 +105,18 @@ export interface PetState {
   lastTickAt: number
   todaysWins: TodaysWins
   history: HistoryEntry[]
+
+  // --- economy & collection (Phase 1 foundation; Phase 2 shop / Phase 3 house use the rest) ---
+  /** Biscuit balance — in-game currency, no real money. Always clamped >= 0. */
+  biscuits: number
+  /** Biscuits earned today from the time trickle; capped per day, reset on rollover. */
+  earnedTodayFromTime: number
+  /** YYYY-MM-DD the good-night bonus was last awarded (caps it to once per day). */
+  lastNightBonusDate: string | null
+  /** Pets the user owns and can set as the active pet. */
+  ownedPets: Animal[]
+  /** Owned shop items: itemId -> quantity. Empty until Phase 2. */
+  inventory: Record<string, number>
+  /** Item ids placed in the house. Empty until Phase 3. */
+  placed: string[]
 }

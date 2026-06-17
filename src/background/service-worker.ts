@@ -131,6 +131,7 @@ async function onTick(): Promise<void> {
   await mutate((s, t) => {
     let n = wb.applyTick(s, t)
     n = wb.maybeWake(n, t)
+    n = wb.applyTimeTrickle(n, t) // capped passive biscuit trickle while active+awake
     if (wb.reminderDue(n, t)) {
       didNudge = true
       n = { ...n, lastReminderAt: t, lastNudgeAt: t, snoozeUntil: null }
