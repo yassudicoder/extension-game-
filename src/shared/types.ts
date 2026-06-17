@@ -25,6 +25,8 @@ export interface PetPosition {
 export interface Stats {
   /** 0–100. Recent hydration, derived from the water log. */
   hydration: number
+  /** 0–100. Recent nourishment, derived from the snack log. */
+  nourishment: number
   /** 0–100. Rest / break balance. */
   rest: number
   /** 0–100, always clamped to >= WELLBEING_FLOOR. The overall, forgiving value. */
@@ -35,6 +37,7 @@ export interface TodaysWins {
   /** YYYY-MM-DD local date this counter belongs to. */
   date: string
   water: number
+  snacks: number
   breaks: number
   pets: number
 }
@@ -63,6 +66,12 @@ export interface PetState {
   /** epoch ms of recent waters, windowed to the hydration window. Feeds hydration. */
   waterLog: number[]
 
+  // --- nourishment (snacks/meals) ---
+  /** epoch ms of the most recent feed, or null. */
+  lastFedAt: number | null
+  /** epoch ms of recent snacks, windowed. Feeds nourishment. */
+  snackLog: number[]
+
   // --- rest / activity ---
   /** Manual "good night" toggle. */
   sleepMode: boolean
@@ -73,10 +82,16 @@ export interface PetState {
   /** epoch ms of the last time the user was active. */
   lastActiveAt: number
 
-  // --- reminders ---
+  // --- water reminders ---
   reminderIntervalMin: number
   remindersEnabled: boolean
   lastReminderAt: number | null
+
+  // --- gentle work/break breather (Pomodoro-ish) ---
+  breakRemindersEnabled: boolean
+  breakIntervalMin: number
+  /** epoch ms anchor for the next break nudge; reset when a real break/snack happens. */
+  lastBreakAt: number | null
   /** epoch ms until which reminders are snoozed, or null. */
   snoozeUntil: number | null
   /** epoch ms of the last soft nudge; the content overlay watches this to animate. */

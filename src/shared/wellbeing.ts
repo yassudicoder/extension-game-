@@ -5,6 +5,8 @@ import {
   WELLBEING_MAX,
   MIN_REMINDER_MIN,
   MAX_REMINDER_MIN,
+  MIN_BREAK_MIN,
+  MAX_BREAK_MIN,
 } from './schema'
 
 // =============================================================================
@@ -36,15 +38,20 @@ const HYDRATION_WINDOW = 10 * HOUR // waters older than this no longer count
 const HYDRATION_BASE = 40 // hydration with no recent water (gentle, never 0)
 const HYDRATION_PER_WATER = 22 // peak contribution of one fresh glass
 
+const NOURISH_WINDOW = 8 * HOUR // snacks older than this no longer count
+const NOURISH_BASE = 50 // nourishment with no recent snack (gentle — never "hungry")
+const NOURISH_PER_SNACK = 18 // peak contribution of one fresh snack
+
 const REST_FLOOR = 45
 const REST_CEIL = 100
 const REST_RECOVER_PER_HOUR = 12 // while resting
 const REST_DECAY_PER_HOUR = 6 // while continuously active
 
-// wellbeing = blend of the two inputs (kept symmetric; the asymmetry of "rises
-// fast, falls slow" comes from the inputs themselves).
-const W_HYDRATION = 0.5
-const W_REST = 0.5
+// wellbeing = blend of the three inputs. The asymmetry of "rises fast, falls slow"
+// comes from the inputs themselves (water/snacks lift instantly, then ebb gently).
+const W_HYDRATION = 0.3
+const W_REST = 0.45
+const W_NOURISH = 0.25
 
 const PET_REST_BONUS = 4 // affection is restful (small, naturally capped by REST_CEIL)
 const BREAK_MIN_MS = 3 * MINUTE // a rest at least this long counts as a "break" win
@@ -70,9 +77,25 @@ export function computeHydration(waterLog: number[], now: number): number {
   return clamp(score, 0, 100)
 }
 
-/** Wellbeing as a pure blend of hydration + rest. Always within [FLOOR, MAX]. */
-export function deriveWellbeing(hydration: number, rest: number): number {
-  return clamp(round(W_HYDRATION * hydration + W_REST * rest), WELLBEING_FLOOR, WELLBEING_MAX)
+/** Nourishment in [0,100], derived purely from the snack log and `now`. */
+export function computeNourishment(snackLog: number[], now: number): number {
+  let score = NOURISH_BASE
+  for (const t of snackLog) {
+    const age = now - t
+    if (age < 0 || age > NOURISH_WINDOW) continue
+    const recency = 1 - age / NOURISH_WINDOW
+    score += NOURISH_PER_SNACK * recency
+  }
+  return clamp(score, 0, 100)
+}
+
+/** Wellbeing as a pure blend of hydration + rest + nourishment. Within [FLOOR, MAX]. */
+export function deriveWellbeing(hydration: number, rest: number, nourishment: number): number {
+  return clamp(
+    round(W_HYDRATION * hydration + W_REST * rest + W_NOURISH * nourishment),
+    WELLBEING_FLOOR,
+    WELLBEING_MAX,
+  )
 }
 
 /** Integrate rest over `hours` of constant activity (linear, clamped). */
@@ -98,7 +121,7 @@ function rolloverIfNeeded(s: PetState, now: number): PetState {
   return {
     ...s,
     history,
-    todaysWins: { date: today, water: 0, breaks: 0, pets: 0 },
+    todaysWins: { date: today, water: 0, snacks: 0, breaks: 0, pets: 0 },
   }
 }
 
@@ -111,15 +134,25 @@ export function applyTick(state: PetState, now: number): PetState {
   let s = rolloverIfNeeded(state, now)
   const hours = Math.max(0, now - s.lastTickAt) / HOUR
 
-  s = { ...s, waterLog: s.waterLog.filter((t) => t <= now && now - t <= HYDRATION_WINDOW) }
+  s = {
+    ...s,
+    waterLog: s.waterLog.filter((t) => t <= now && now - t <= HYDRATION_WINDOW),
+    snackLog: s.snackLog.filter((t) => t <= now && now - t <= NOURISH_WINDOW),
+  }
 
   const hydration = computeHydration(s.waterLog, now)
+  const nourishment = computeNourishment(s.snackLog, now)
   const rest = stepRest(s.stats.rest, hours, isResting(s))
-  const wellbeing = deriveWellbeing(hydration, rest)
+  const wellbeing = deriveWellbeing(hydration, rest, nourishment)
 
   return {
     ...s,
-    stats: { hydration: round(hydration), rest: round(rest), wellbeing },
+    stats: {
+      hydration: round(hydration),
+      nourishment: round(nourishment),
+      rest: round(rest),
+      wellbeing,
+    },
     lastTickAt: now,
   }
 }
@@ -135,8 +168,32 @@ export function applyWater(state: PetState, now: number): PetState {
     lastWaterAt: now,
     snoozeUntil: null,
     lastNudgeAt: null, // drinking clears any pending nudge
-    stats: { ...s.stats, hydration: round(hydration), wellbeing: deriveWellbeing(hydration, s.stats.rest) },
+    stats: {
+      ...s.stats,
+      hydration: round(hydration),
+      wellbeing: deriveWellbeing(hydration, s.stats.rest, s.stats.nourishment),
+    },
     todaysWins: { ...s.todaysWins, water: s.todaysWins.water + 1 },
+  }
+}
+
+/** Feed a snack/meal: instantly lifts nourishment. Pure reward — never "hungry". */
+export function applyFeed(state: PetState, now: number): PetState {
+  const s = applyTick(state, now)
+  const snackLog = [...s.snackLog, now]
+  const nourishment = computeNourishment(snackLog, now)
+  return {
+    ...s,
+    snackLog,
+    lastFedAt: now,
+    lastBreakAt: now, // a snack counts as taking your break
+    lastNudgeAt: null,
+    stats: {
+      ...s.stats,
+      nourishment: round(nourishment),
+      wellbeing: deriveWellbeing(s.stats.hydration, s.stats.rest, nourishment),
+    },
+    todaysWins: { ...s.todaysWins, snacks: s.todaysWins.snacks + 1 },
   }
 }
 
@@ -146,7 +203,11 @@ export function applyPet(state: PetState, now: number): PetState {
   const rest = clamp(s.stats.rest + PET_REST_BONUS, REST_FLOOR, REST_CEIL)
   return {
     ...s,
-    stats: { ...s.stats, rest: round(rest), wellbeing: deriveWellbeing(s.stats.hydration, rest) },
+    stats: {
+      ...s.stats,
+      rest: round(rest),
+      wellbeing: deriveWellbeing(s.stats.hydration, rest, s.stats.nourishment),
+    },
     todaysWins: { ...s.todaysWins, pets: s.todaysWins.pets + 1 },
   }
 }
@@ -163,10 +224,12 @@ export function applyActivity(state: PetState, now: number, activity: ActivitySt
   const restedMs = now - state.lastActiveAt
   const s = applyTick(state, now)
   let todaysWins = s.todaysWins
+  let lastBreakAt = s.lastBreakAt
   if (activity === 'active' && wasResting && restedMs >= BREAK_MIN_MS) {
     todaysWins = { ...todaysWins, breaks: todaysWins.breaks + 1 }
+    lastBreakAt = now // an actual break resets the breather timer
   }
-  return { ...s, activityState: activity, lastActiveAt: now, todaysWins }
+  return { ...s, activityState: activity, lastActiveAt: now, todaysWins, lastBreakAt }
 }
 
 /** Toggle manual "good night" sleep; schedules an auto-wake for the morning. */
@@ -221,6 +284,35 @@ export function reminderDue(state: PetState, now: number): boolean {
   // fired for someone who'd never logged water).
   const anchor = Math.max(state.lastWaterAt ?? 0, state.lastReminderAt ?? 0)
   if (anchor === 0) return now - state.installedAt >= intervalMs
+  return now - anchor >= intervalMs
+}
+
+/** Update break-breather settings, clamping the interval to a sane range. */
+export function applyBreakSettings(
+  state: PetState,
+  now: number,
+  intervalMin: number,
+  enabled: boolean,
+): PetState {
+  const s = applyTick(state, now)
+  return {
+    ...s,
+    breakIntervalMin: clamp(Math.round(intervalMin), MIN_BREAK_MIN, MAX_BREAK_MIN),
+    breakRemindersEnabled: enabled,
+  }
+}
+
+/**
+ * Is a gentle break-breather nudge due? Like reminders: never while away, asleep,
+ * snoozed, or disabled. Anchored on the last real break/snack (or install).
+ */
+export function breakDue(state: PetState, now: number): boolean {
+  if (!state.breakRemindersEnabled) return false
+  if (state.sleepMode) return false
+  if (state.activityState !== 'active') return false
+  if (state.snoozeUntil != null && now < state.snoozeUntil) return false
+  const intervalMs = state.breakIntervalMin * MINUTE
+  const anchor = state.lastBreakAt ?? state.installedAt
   return now - anchor >= intervalMs
 }
 

@@ -1,84 +1,116 @@
 import type { Animal } from './types'
+import { SHEETS } from './sprites.generated'
 
-// Inline SVG sprites. Kept in /shared so both the on-page overlay and the popup
-// preview render the exact same pet. Inlining (vs. <img src> assets) means:
-//   - no web_accessible_resources entry is needed,
-//   - nothing is fetched at runtime (CSP-safe on strict pages),
-//   - no remote code (MV3 policy).
-// Every sprite shares the same element classes so one stylesheet can theme + animate
-// all three animals (open vs. shut eyes, blink, cheek colour, etc.).
+// Pixel-art sprites. Each animal has ONE sheet (a grid of equal 32x32 cells); each
+// row is one animation. Sheets are inlined as base64 data URIs (see SHEETS) so
+// there's no remote code and no web_accessible_resources entry.
+//
+// Rendering uses CSS `steps()` to cycle background-position across a row, plus a
+// single shared keyframe (`pp-cycle`, defined in the overlay + popup stylesheets):
+//   @keyframes pp-cycle { to { background-position-x: var(--pp-x1); } }
+// The element's base background-position-x is the first frame; the animation steps
+// to --pp-x1 (one cell past the last frame) in `frames` steps. This works at ANY
+// integer scale, so overlay / popup-hero / resident-thumbnail can each pick a size.
 
-const PALETTE: Record<Animal, { body: string; ear: string; accent: string }> = {
-  cat: { body: '#b9c2cf', ear: '#a6b0bf', accent: '#f3a9b8' },
-  dog: { body: '#e2c19b', ear: '#caa17e', accent: '#f3a9b8' },
-  bunny: { body: '#f3eef0', ear: '#e7dde1', accent: '#f3a9b8' },
+export type AnimState = 'idle' | 'walk' | 'run' | 'play' | 'sleep'
+
+export interface StateDef {
+  /** row index in the sheet */
+  row: number
+  /** first column of this animation */
+  from: number
+  /** number of frames */
+  frames: number
+  /** playback speed */
+  fps: number
+  loop: boolean
 }
 
-function face(): string {
-  // shared face: open eyes (default) + shut eyes (shown when .pp-sprite is sleeping)
-  return `
-    <circle class="pp-cheek" cx="31" cy="66" r="5.5" />
-    <circle class="pp-cheek" cx="69" cy="66" r="5.5" />
-    <g class="pp-eyes-open">
-      <circle class="pp-eye" cx="40" cy="55" r="4.6" />
-      <circle class="pp-eye" cx="60" cy="55" r="4.6" />
-      <circle class="pp-glint" cx="41.6" cy="53.4" r="1.5" />
-      <circle class="pp-glint" cx="61.6" cy="53.4" r="1.5" />
-    </g>
-    <g class="pp-eyes-shut">
-      <path class="pp-eyeline" d="M35 56 q5 4 10 0" />
-      <path class="pp-eyeline" d="M55 56 q5 4 10 0" />
-    </g>
-    <path class="pp-mouth" d="M46 65 q4 4 8 0" />
-  `
+export interface SpriteDef {
+  sheet: string
+  frameW: number
+  frameH: number
+  cols: number
+  rows: number
+  /** default integer upscale for crisp pixels */
+  scale: number
+  states: Record<AnimState, StateDef>
 }
 
-function catSprite(p: (typeof PALETTE)['cat']): string {
-  return `
-    <path class="pp-ear" d="M26 40 L31 14 L48 34 Z" fill="${p.ear}" />
-    <path class="pp-ear" d="M74 40 L69 14 L52 34 Z" fill="${p.ear}" />
-    <path class="pp-ear-inner" d="M31 33 L33 20 L42 32 Z" fill="${p.accent}" />
-    <path class="pp-ear-inner" d="M69 33 L67 20 L58 32 Z" fill="${p.accent}" />
-    <ellipse class="pp-body" cx="50" cy="60" rx="33" ry="31" fill="${p.body}" />
-    ${face()}
-  `
+// Layout MUST match scripts/gen-placeholder-sprites.mjs.
+// ── To drop in your OWN art: replace src/assets/sprites/{animal}.png and edit the
+//    numbers below to match your sheet (one block per animal). That's the only edit.
+const LAYOUT: Omit<SpriteDef, 'sheet'> = {
+  frameW: 32,
+  frameH: 32,
+  cols: 6,
+  rows: 5,
+  scale: 3,
+  states: {
+    idle: { row: 0, from: 0, frames: 4, fps: 4, loop: true },
+    walk: { row: 1, from: 0, frames: 6, fps: 9, loop: true },
+    run: { row: 2, from: 0, frames: 6, fps: 14, loop: true },
+    play: { row: 3, from: 0, frames: 4, fps: 10, loop: false },
+    sleep: { row: 4, from: 0, frames: 2, fps: 1.2, loop: true },
+  },
 }
 
-function dogSprite(p: (typeof PALETTE)['dog']): string {
-  return `
-    <ellipse class="pp-ear" cx="20" cy="56" rx="11" ry="20" fill="${p.ear}" />
-    <ellipse class="pp-ear" cx="80" cy="56" rx="11" ry="20" fill="${p.ear}" />
-    <ellipse class="pp-body" cx="50" cy="58" rx="33" ry="31" fill="${p.body}" />
-    <ellipse class="pp-snout" cx="50" cy="70" rx="15" ry="11" fill="#fff7ee" opacity="0.7" />
-    ${face()}
-  `
+export const SPRITES: Record<Animal, SpriteDef> = {
+  cat: { sheet: SHEETS.cat, ...LAYOUT },
+  dog: { sheet: SHEETS.dog, ...LAYOUT },
+  bunny: { sheet: SHEETS.bunny, ...LAYOUT },
 }
 
-function bunnySprite(p: (typeof PALETTE)['bunny']): string {
-  return `
-    <ellipse class="pp-ear" cx="38" cy="22" rx="7" ry="22" fill="${p.ear}" />
-    <ellipse class="pp-ear" cx="62" cy="22" rx="7" ry="22" fill="${p.ear}" />
-    <ellipse class="pp-ear-inner" cx="38" cy="24" rx="3" ry="15" fill="${p.accent}" />
-    <ellipse class="pp-ear-inner" cx="62" cy="24" rx="3" ry="15" fill="${p.accent}" />
-    <ellipse class="pp-body" cx="50" cy="62" rx="32" ry="29" fill="${p.body}" />
-    ${face()}
-  `
+// ---- render helpers (shared by the overlay and the popup) ----
+
+/** Set up an element to display an animal's sheet at the given integer scale. */
+export function mountSprite(el: HTMLElement, animal: Animal, scale: number): void {
+  const def = SPRITES[animal]
+  const cellW = def.frameW * scale
+  const cellH = def.frameH * scale
+  el.classList.add('pp-pixel')
+  el.style.width = `${cellW}px`
+  el.style.height = `${cellH}px`
+  el.style.backgroundImage = `url("${def.sheet}")`
+  el.style.backgroundSize = `${def.cols * cellW}px ${def.rows * cellH}px`
 }
 
-/** Returns the inner SVG markup for an animal (no wrapping <svg> element). */
-export function spriteInner(animal: Animal): string {
-  const p = PALETTE[animal]
-  switch (animal) {
-    case 'cat':
-      return catSprite(p)
-    case 'dog':
-      return dogSprite(p)
-    case 'bunny':
-      return bunnySprite(p)
-  }
+/** Play an animation state (CSS steps). Restarts even if re-applying the same state. */
+export function setSpriteState(
+  el: HTMLElement,
+  animal: Animal,
+  state: AnimState,
+  scale: number,
+): void {
+  const def = SPRITES[animal]
+  const st = def.states[state]
+  const cellW = def.frameW * scale
+  const cellH = def.frameH * scale
+  const x0 = -(st.from * cellW)
+  const x1 = -((st.from + st.frames) * cellW)
+  const dur = st.frames / st.fps
+
+  el.style.animation = 'none'
+  void el.offsetWidth // reflow so the animation restarts cleanly
+  el.style.backgroundPositionX = `${x0}px`
+  el.style.backgroundPositionY = `${-(st.row * cellH)}px`
+  el.style.setProperty('--pp-x1', `${x1}px`)
+  el.style.animation = `pp-cycle ${dur}s steps(${st.frames}) ${st.loop ? 'infinite' : '1'}`
 }
 
-/** Returns a complete, self-contained <svg> string for an animal. */
-export function spriteSvg(animal: Animal): string {
-  return `<svg class="pp-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${spriteInner(animal)}</svg>`
+/** Show a single static frame with no animation (for thumbnails / reduced motion). */
+export function setStaticFrame(
+  el: HTMLElement,
+  animal: Animal,
+  state: AnimState,
+  frame: number,
+  scale: number,
+): void {
+  const def = SPRITES[animal]
+  const st = def.states[state]
+  const cellW = def.frameW * scale
+  const cellH = def.frameH * scale
+  el.style.animation = 'none'
+  el.style.backgroundPositionX = `${-((st.from + frame) * cellW)}px`
+  el.style.backgroundPositionY = `${-(st.row * cellH)}px`
 }

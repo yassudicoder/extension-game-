@@ -6,8 +6,9 @@
   "type": "module",
   "scripts": {
     "icons": "node scripts/gen-icons.mjs",
+    "sprites": "node scripts/gen-placeholder-sprites.mjs && node scripts/pack-sprites.mjs",
     "dev": "vite",
-    "build": "npm run icons && tsc --noEmit && vite build",
+    "build": "npm run sprites && npm run icons && tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"

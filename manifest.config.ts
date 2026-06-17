@@ -36,8 +36,10 @@ export default defineManifest({
     },
   ],
 
-  // storage = state, alarms = scheduling, idle = activity detection.
-  permissions: ['storage', 'alarms', 'idle'],
+  // storage = state, alarms = scheduling, idle = activity detection, scripting =
+  // re-inject the overlay into already-open tabs after an install/update/reload
+  // (declared content scripts only auto-inject on the NEXT page load).
+  permissions: ['storage', 'alarms', 'idle', 'scripting'],
 
   // NOTE: <all_urls> lets the pet appear on every page out of the box, which matches
   // the product ("a pet that lives on your web pages"). Broad host permissions DO

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   applyTick,
   applyWater,
+  applyFeed,
   applyPet,
   applyActivity,
   applySleep,
@@ -9,7 +10,10 @@ import {
   applySnooze,
   applyReminderSettings,
   reminderDue,
+  applyBreakSettings,
+  breakDue,
   computeHydration,
+  computeNourishment,
   petMood,
   describeWellbeing,
 } from './wellbeing'
@@ -173,6 +177,50 @@ describe('reminders', () => {
   })
 })
 
+describe('feed (nourishment) is a pure reward — never punishing', () => {
+  it('feeding lifts nourishment + wellbeing and logs a snack', () => {
+    let s = defaultState(T0)
+    const before = s.stats.wellbeing
+    s = applyFeed(s, T0)
+    expect(s.stats.nourishment).toBeGreaterThan(50)
+    expect(s.stats.wellbeing).toBeGreaterThanOrEqual(before)
+    expect(s.todaysWins.snacks).toBe(1)
+    expect(s.lastFedAt).toBe(T0)
+  })
+
+  it('never goes "hungry": nourishment rests at a gentle baseline, never 0', () => {
+    expect(computeNourishment([], T0)).toBeGreaterThanOrEqual(50)
+    const stale = computeNourishment([T0 - 20 * HOUR], T0) // older than the window
+    expect(stale).toBeCloseTo(50, 5)
+  })
+})
+
+describe('break breather', () => {
+  it('is due after the interval for a fresh active user, and a real break resets it', () => {
+    let s = defaultState(T0) // breakRemindersEnabled + active by default
+    expect(breakDue(s, T0 + 30 * MINUTE)).toBe(false)
+    expect(breakDue(s, T0 + 55 * MINUTE)).toBe(true)
+    s = applyActivity(s, T0 + 55 * MINUTE, 'idle')
+    s = applyActivity(s, T0 + 70 * MINUTE, 'active') // 15-min rest → credited break
+    expect(breakDue(s, T0 + 80 * MINUTE)).toBe(false)
+  })
+
+  it('never fires while away, asleep, or disabled', () => {
+    const base = { ...defaultState(T0), lastBreakAt: T0 - 2 * HOUR }
+    expect(breakDue(base, T0)).toBe(true)
+    expect(breakDue({ ...base, activityState: 'idle' }, T0)).toBe(false)
+    expect(breakDue({ ...base, sleepMode: true }, T0)).toBe(false)
+    expect(breakDue({ ...base, breakRemindersEnabled: false }, T0)).toBe(false)
+  })
+
+  it('clamps the break interval to its allowed range', () => {
+    let s = applyBreakSettings(defaultState(T0), T0, 5, true)
+    expect(s.breakIntervalMin).toBeGreaterThanOrEqual(25)
+    s = applyBreakSettings(s, T0, 9999, true)
+    expect(s.breakIntervalMin).toBeLessThanOrEqual(120)
+  })
+})
+
 describe('migrate validates stored data', () => {
   it('falls back to defaults for a corrupt animal / corner', () => {
     const fixed = migrate({ animal: 'dragon', position: { corner: 'xx', dx: 5, dy: 5 } }, T0)
@@ -208,7 +256,7 @@ describe('mood & copy are never punishing', () => {
     const s = {
       ...defaultState(T0),
       activityState: 'active' as const,
-      stats: { hydration: 10, rest: 10, wellbeing: WELLBEING_FLOOR },
+      stats: { hydration: 10, nourishment: 10, rest: 10, wellbeing: WELLBEING_FLOOR },
     }
     const text = describeWellbeing(s).toLowerCase()
     expect(text).toMatch(/gentle|easy|💛/)
@@ -217,7 +265,10 @@ describe('mood & copy are never punishing', () => {
 
   it('petting nudges up but is small and capped', () => {
     // normalise first so `before` is the derived value, then pet.
-    let s = applyTick({ ...defaultState(T0), stats: { hydration: 40, rest: 70, wellbeing: 0 } }, T0)
+    let s = applyTick(
+      { ...defaultState(T0), stats: { hydration: 40, nourishment: 50, rest: 70, wellbeing: 0 } },
+      T0,
+    )
     const before = s.stats.wellbeing
     s = applyPet(s, T0)
     expect(s.stats.wellbeing).toBeGreaterThanOrEqual(before)

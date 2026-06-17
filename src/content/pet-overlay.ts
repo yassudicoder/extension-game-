@@ -1,13 +1,12 @@
 import type { PetPosition, PetState } from '../shared/types'
 import { loadState, onStateChanged } from '../shared/storage'
 import { MSG, sendMessage } from '../shared/messages'
-import { spriteSvg } from '../shared/sprites'
 import { petMood } from '../shared/wellbeing'
 import { OVERLAY_CSS } from './styles'
 import { createAnimator } from './pet-animator'
 
 const HOST_ID = 'pocket-pet-host'
-const PET_SIZE = 72
+const PET_SIZE = 64
 const MARGIN = 8
 const DRAG_THRESHOLD = 6
 
@@ -52,8 +51,6 @@ export async function mountPet(): Promise<void> {
     return
   }
 
-  // The single host element. `all: initial` (in the shadow CSS) + these inline
-  // resets keep the host from being affected by — or affecting — the page layout.
   const host = document.createElement('div')
   host.id = HOST_ID
   // display:block is set explicitly: the shadow CSS uses `:host { all: initial }`,
@@ -75,7 +72,7 @@ export async function mountPet(): Promise<void> {
   petEl.className = 'pp-pet'
   petEl.setAttribute('aria-label', 'Your Pocket Pet — click to pet it, drag to move it')
   const spriteEl = document.createElement('div')
-  spriteEl.className = 'pp-sprite'
+  spriteEl.className = 'pp-sprite pp-pixel'
   const fxEl = document.createElement('div')
   fxEl.className = 'pp-fx'
   petEl.append(spriteEl, fxEl)
@@ -83,12 +80,11 @@ export async function mountPet(): Promise<void> {
   root.append(wrapper)
 
   let state: PetState = await loadState(Date.now())
-  spriteEl.insertAdjacentHTML('afterbegin', spriteSvg(state.animal))
   applyPosition(petEl, state.position)
   applyHidden(host, state.hidden)
 
-  const animator = createAnimator(petEl, spriteEl, fxEl)
-  animator.setMood(petMood(state, Date.now()))
+  const animator = createAnimator(petEl, spriteEl, fxEl, () => state.animal)
+  animator.setSleeping(petMood(state, Date.now()) === 'sleeping')
   if (!state.hidden) animator.start()
 
   // Stay in sync with storage (single source of truth). We only READ here.
@@ -96,25 +92,23 @@ export async function mountPet(): Promise<void> {
     const prev = state
     state = next
 
-    if (next.animal !== prev.animal) {
-      spriteEl.innerHTML = ''
-      spriteEl.insertAdjacentHTML('afterbegin', spriteSvg(next.animal))
-    }
+    if (next.animal !== prev.animal) animator.remount()
     if (next.hidden !== prev.hidden) {
       applyHidden(host, next.hidden)
       if (next.hidden) animator.stop()
       else animator.start()
     }
     if (!next.hidden) applyPosition(petEl, next.position)
-    animator.setMood(petMood(next, Date.now()))
+    animator.setSleeping(petMood(next, Date.now()) === 'sleeping')
 
-    if (next.lastWaterAt && next.lastWaterAt !== prev.lastWaterAt) animator.playDrink()
+    if (next.lastWaterAt && next.lastWaterAt !== prev.lastWaterAt) animator.drink()
+    if (next.lastFedAt && next.lastFedAt !== prev.lastFedAt) animator.eat()
     if (
       next.lastNudgeAt &&
       next.lastNudgeAt !== prev.lastNudgeAt &&
       Date.now() - next.lastNudgeAt < 15_000
     ) {
-      animator.playNudge()
+      animator.nudge()
     }
   })
 
@@ -159,7 +153,7 @@ export async function mountPet(): Promise<void> {
       state = { ...state, position: livePos }
       void sendMessage({ type: MSG.SET_POSITION, position: livePos })
     } else {
-      animator.playCelebrate()
+      animator.celebrate()
       void sendMessage({ type: MSG.PET_CLICKED })
     }
   }
@@ -168,7 +162,7 @@ export async function mountPet(): Promise<void> {
   petEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
-      animator.playCelebrate()
+      animator.celebrate()
       void sendMessage({ type: MSG.PET_CLICKED })
     }
   })

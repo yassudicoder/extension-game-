@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Animal, PetState } from '../shared/types'
 import { MSG, sendMessage, type Message } from '../shared/messages'
 import { loadState, onStateChanged } from '../shared/storage'
-import { spriteSvg } from '../shared/sprites'
+import { SPRITES, mountSprite, setSpriteState, setStaticFrame } from '../shared/sprites'
 import { describeWellbeing } from '../shared/wellbeing'
 import {
   ANIMALS,
@@ -10,10 +10,28 @@ import {
   DEFAULT_REMINDER_MIN,
   MIN_REMINDER_MIN,
   MAX_REMINDER_MIN,
+  DEFAULT_BREAK_MIN,
+  MIN_BREAK_MIN,
+  MAX_BREAK_MIN,
 } from '../shared/schema'
 
 // Cosy display-only names (NOT persisted — purely cosmetic, per the spec).
 const PET_NAMES: Record<Animal, string> = { cat: 'Pip', dog: 'Biscuit', bunny: 'Clover' }
+
+const HERO_SCALE = 3 // 32px frame -> 96px hero
+const RESIDENT_SCALE = 1 // 32px thumbnail
+
+/** A static idle-frame thumbnail of an animal for the resident picker. */
+function ResidentSprite({ animal }: { animal: Animal }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    mountSprite(el, animal, RESIDENT_SCALE)
+    setStaticFrame(el, animal, 'idle', 0, RESIDENT_SCALE)
+  }, [animal])
+  return <span ref={ref} className="mini pp-pixel" />
+}
 
 function usePetState() {
   const [state, setState] = useState<PetState | null>(null)
@@ -68,14 +86,30 @@ export function App() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [reminderDraft, setReminderDraft] = useState(DEFAULT_REMINDER_MIN)
+  const [breakDraft, setBreakDraft] = useState(DEFAULT_BREAK_MIN)
 
-  const petRef = useRef<HTMLButtonElement>(null)
+  const heroRef = useRef<HTMLDivElement>(null)
   const rippleRef = useRef<HTMLSpanElement>(null)
   const dropRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
     if (state) setReminderDraft(state.reminderIntervalMin)
   }, [state?.reminderIntervalMin])
+
+  useEffect(() => {
+    if (state) setBreakDraft(state.breakIntervalMin)
+  }, [state?.breakIntervalMin])
+
+  // Drive the pixel hero: mount the sheet and reflect idle/sleep; play() on demand.
+  useEffect(() => {
+    const el = heroRef.current
+    if (!el || !state) return
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    mountSprite(el, state.animal, HERO_SCALE)
+    const base = state.sleepMode ? 'sleep' : 'idle'
+    if (reduced) setStaticFrame(el, state.animal, base, 0, HERO_SCALE)
+    else setSpriteState(el, state.animal, base, HERO_SCALE)
+  }, [state?.animal, state?.sleepMode])
 
   if (!state) {
     return <div className="popup loading">waking up your pet…</div>
@@ -84,18 +118,36 @@ export function App() {
   const animal = state.animal
   const asleep = state.sleepMode
 
+  const playHero = () => {
+    const el = heroRef.current
+    if (!el || state.sleepMode) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    setSpriteState(el, state.animal, 'play', HERO_SCALE)
+    const d = SPRITES[state.animal].states.play
+    window.setTimeout(() => {
+      const e = heroRef.current
+      if (e) setSpriteState(e, state.animal, state.sleepMode ? 'sleep' : 'idle', HERO_SCALE)
+    }, (d.frames / d.fps) * 1000)
+  }
   const petIt = () => {
     void act({ type: MSG.PET_CLICKED })
-    retrigger(petRef.current, 'pop', 500)
+    playHero()
   }
   const drinkWater = () => {
     void act({ type: MSG.DRANK_WATER })
-    retrigger(petRef.current, 'tip', 700)
+    playHero()
     retrigger(rippleRef.current, 'go', 700)
     retrigger(dropRef.current, 'go', 900)
   }
+  const feed = () => {
+    void act({ type: MSG.FED })
+    playHero()
+  }
   const commitInterval = () => {
     void act({ type: MSG.SET_REMINDER, intervalMin: reminderDraft, enabled: state.remindersEnabled })
+  }
+  const commitBreak = () => {
+    void act({ type: MSG.SET_BREAK, intervalMin: breakDraft, enabled: state.breakRemindersEnabled })
   }
 
   return (
@@ -147,13 +199,9 @@ export function App() {
         <div className="stage">
           <div className="rug" />
 
-          <button
-            ref={petRef}
-            className={`pet ${asleep ? 'asleep' : ''}`}
-            aria-label={`Pet ${PET_NAMES[animal]}`}
-            onClick={petIt}
-            dangerouslySetInnerHTML={{ __html: spriteSvg(animal) }}
-          />
+          <button className="pet" aria-label={`Pet ${PET_NAMES[animal]}`} onClick={petIt}>
+            <div ref={heroRef} className="pixel-pet pp-pixel" />
+          </button>
 
           <span ref={rippleRef} className="ripple" />
           <span ref={dropRef} className="drop" aria-hidden="true">
@@ -172,6 +220,18 @@ export function App() {
               <ellipse cx="20" cy="20.5" rx="5" ry="1.6" fill="#bfe7f7" />
             </svg>
             <span className="cap">water</span>
+          </button>
+
+          <button className="obj dish" aria-label="Feed your pet a snack" onClick={feed}>
+            <svg width="44" height="32" viewBox="0 0 44 32" aria-hidden="true">
+              <ellipse cx="22" cy="24" rx="20" ry="8" fill="#cdd7e2" />
+              <ellipse cx="22" cy="22" rx="20" ry="8" fill="#e7edf3" />
+              <ellipse cx="22" cy="21" rx="13" ry="5" fill="#cba06a" />
+              <circle cx="16" cy="20" r="2" fill="#9c6b3f" />
+              <circle cx="23" cy="21" r="2" fill="#9c6b3f" />
+              <circle cx="28" cy="19" r="1.6" fill="#9c6b3f" />
+            </svg>
+            <span className="cap">snack</span>
           </button>
 
           <button
@@ -202,6 +262,16 @@ export function App() {
             {state.todaysWins.water}
           </span>
           <span className="token">
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="8" cy="8" r="7" fill="#cba06a" />
+              <circle cx="6" cy="6" r="1" fill="#7e5a34" />
+              <circle cx="10.5" cy="7" r="1" fill="#7e5a34" />
+              <circle cx="7" cy="10.5" r="1" fill="#7e5a34" />
+              <circle cx="11" cy="11" r="1" fill="#7e5a34" />
+            </svg>
+            {state.todaysWins.snacks}
+          </span>
+          <span className="token">
             <svg width="17" height="16" viewBox="0 0 17 16" aria-hidden="true">
               <path d="M2 14 C2 5 9 1 15 1 C15 9 9 14 2 14Z" fill="#9cae6e" />
               <path d="M3 13 C6 9 10 6 13 4" stroke="#7d9056" strokeWidth="1.2" fill="none" />
@@ -230,14 +300,20 @@ export function App() {
             aria-label={`Choose ${ANIMAL_LABELS[a]}`}
             onClick={() => void act({ type: MSG.SET_ANIMAL, animal: a })}
           >
-            <span className="mini" dangerouslySetInnerHTML={{ __html: spriteSvg(a) }} />
+            <ResidentSprite animal={a} />
             {ANIMAL_LABELS[a]}
           </button>
         ))}
       </div>
 
       <div className="toolbar">
-        <span className="hint">tap the bowl, pet {PET_NAMES[animal]}, tuck them in</span>
+        <button
+          className="summon"
+          aria-pressed={!state.hidden}
+          onClick={() => void act({ type: MSG.SET_HIDDEN, hidden: !state.hidden })}
+        >
+          {state.hidden ? `☀️ Send ${PET_NAMES[animal]} outside` : `🏠 Bring ${PET_NAMES[animal]} inside`}
+        </button>
         <button
           className="gear"
           aria-label="Settings"
@@ -291,6 +367,42 @@ export function App() {
           <div className="range-note">
             every {reminderDraft} min · never while you’re away or asleep
           </div>
+        </div>
+
+        <div className={`range-row ${state.breakRemindersEnabled ? '' : 'is-off'}`}>
+          <div className="top">
+            <span>break breather</span>
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={state.breakRemindersEnabled}
+                aria-label="Toggle break breather"
+                onChange={(e) =>
+                  void act({
+                    type: MSG.SET_BREAK,
+                    intervalMin: state.breakIntervalMin,
+                    enabled: e.target.checked,
+                  })
+                }
+              />
+              <span className="track" />
+              <span className="knob" />
+            </label>
+          </div>
+          <input
+            type="range"
+            min={MIN_BREAK_MIN}
+            max={MAX_BREAK_MIN}
+            step={5}
+            value={breakDraft}
+            disabled={!state.breakRemindersEnabled}
+            aria-label="Break interval in minutes"
+            onChange={(e) => setBreakDraft(Number(e.target.value))}
+            onPointerUp={commitBreak}
+            onKeyUp={commitBreak}
+            onBlur={commitBreak}
+          />
+          <div className="range-note">every {breakDraft} min · a nudge to stretch, sip &amp; snack</div>
         </div>
 
         <div className="opt">

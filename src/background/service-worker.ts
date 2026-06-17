@@ -49,12 +49,47 @@ async function setNudgeBadge(on: boolean): Promise<void> {
   }
 }
 
+// ---- re-inject the content overlay into already-open tabs ----
+// Declared content scripts only auto-inject on the NEXT navigation, so after an
+// install / update / unpacked-reload the pet is missing from tabs that are already
+// open until they're refreshed. mountPet() is idempotent, so re-injecting is safe.
+async function injectContentScript(tabId: number): Promise<void> {
+  const files = chrome.runtime.getManifest().content_scripts?.[0]?.js
+  if (!files || files.length === 0) return
+  try {
+    await chrome.scripting.executeScript({ target: { tabId }, files })
+  } catch {
+    // restricted page (chrome://, the Web Store, PDF viewer …) or already present.
+  }
+}
+async function injectIntoOpenTabs(): Promise<void> {
+  try {
+    const tabs = await chrome.tabs.query({})
+    for (const tab of tabs) {
+      if (tab.id != null && tab.url && /^https?:/i.test(tab.url)) await injectContentScript(tab.id)
+    }
+  } catch {
+    /* no-op */
+  }
+}
+async function injectIntoActiveTab(): Promise<void> {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+    if (tab?.id != null && tab.url && /^https?:/i.test(tab.url)) await injectContentScript(tab.id)
+  } catch {
+    /* no-op */
+  }
+}
+
 // ---- message handling (popup / content → SW) ----
 function handle(msg: Message): Promise<PetState> {
   switch (msg.type) {
     case MSG.DRANK_WATER:
       void setNudgeBadge(false)
       return mutate((s, t) => wb.applyWater(s, t))
+    case MSG.FED:
+      void setNudgeBadge(false)
+      return mutate((s, t) => wb.applyFeed(s, t))
     case MSG.PET_CLICKED:
       return mutate((s, t) => wb.applyPet(s, t))
     case MSG.TOGGLE_SLEEP:
@@ -63,12 +98,15 @@ function handle(msg: Message): Promise<PetState> {
       return mutate((s, t) => ({ ...wb.applyTick(s, t), animal: msg.animal }))
     case MSG.SET_REMINDER:
       return mutate((s, t) => wb.applyReminderSettings(s, t, msg.intervalMin, msg.enabled))
+    case MSG.SET_BREAK:
+      return mutate((s, t) => wb.applyBreakSettings(s, t, msg.intervalMin, msg.enabled))
     case MSG.SNOOZE_REMINDER:
       void setNudgeBadge(false)
       return mutate((s, t) => wb.applySnooze(s, t, msg.minutes))
     case MSG.SET_POSITION:
       return mutate((s, t) => ({ ...wb.applyTick(s, t), position: msg.position }))
     case MSG.SET_HIDDEN:
+      if (!msg.hidden) void injectIntoActiveTab() // summoning: make sure the pet is present
       return mutate((s, t) => ({ ...wb.applyTick(s, t), hidden: msg.hidden }))
     case MSG.RESET:
       void setNudgeBadge(false)
@@ -96,6 +134,10 @@ async function onTick(): Promise<void> {
     if (wb.reminderDue(n, t)) {
       didNudge = true
       n = { ...n, lastReminderAt: t, lastNudgeAt: t, snoozeUntil: null }
+    } else if (wb.breakDue(n, t)) {
+      // at most one nudge per tick; water takes priority over the break breather
+      didNudge = true
+      n = { ...n, lastBreakAt: t, lastNudgeAt: t }
     }
     return n
   })
@@ -117,6 +159,7 @@ chrome.runtime.onInstalled.addListener(() => {
     await mutate((s, t) => wb.applyTick(s, t)) // materialise / migrate state
     await ensureAlarms()
     await setNudgeBadge(false)
+    await injectIntoOpenTabs() // so the pet appears without a manual page refresh
   })()
 })
 
@@ -128,5 +171,6 @@ chrome.runtime.onStartup.addListener(() => {
       return wb.maybeWake(wb.applyTick(s, t), t)
     })
     await setNudgeBadge(false)
+    await injectIntoOpenTabs()
   })()
 })

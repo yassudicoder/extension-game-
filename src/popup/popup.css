@@ -356,63 +356,34 @@ body {
   transform: translateX(-50%);
   width: 118px;
   height: 118px;
-  transform-origin: 50% 92%;
   cursor: pointer;
   border: 0;
   background: transparent;
   padding: 0;
+  display: grid;
+  place-items: center;
   filter: drop-shadow(0 8px 7px rgba(74, 63, 53, 0.22));
-  animation: bob 3.4s ease-in-out infinite;
 }
 .pet:focus-visible {
   outline: 3px solid var(--coral);
   outline-offset: 6px;
   border-radius: 24px;
 }
-.pet svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  overflow: visible;
-}
-.pet.pop {
-  animation: pop 0.5s ease;
-}
-.pet.tip {
-  animation: tip 0.7s ease-in-out;
-}
 
-/* shared sprite face styling (spriteSvg uses these class names) */
-.pp-cheek {
-  fill: var(--coral);
-  opacity: 0.7;
+/* crisp upscaled pixel sprites (hero + resident thumbnails) */
+.pp-pixel {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background-repeat: no-repeat;
 }
-.pp-eye {
-  fill: #2f2a33;
-}
-.pp-glint {
-  fill: #fff;
-}
-.pp-mouth {
-  stroke: #2f2a33;
-  stroke-width: 2;
-  fill: none;
-  stroke-linecap: round;
-}
-.pp-eyeline {
-  stroke: #2f2a33;
-  stroke-width: 2.4;
-  fill: none;
-  stroke-linecap: round;
-}
-.pp-eyes-shut {
-  display: none;
-}
-.pet.asleep .pp-eyes-open {
-  display: none;
-}
-.pet.asleep .pp-eyes-shut {
+.pixel-pet {
   display: block;
+}
+/* the single shared keyframe that drives every state's frame-stepping */
+@keyframes pp-cycle {
+  to {
+    background-position-x: var(--pp-x1);
+  }
 }
 
 .obj {
@@ -442,7 +413,10 @@ body {
   letter-spacing: 0.2px;
 }
 .bowl {
-  left: 18px;
+  left: 6px;
+}
+.dish {
+  left: 62px;
 }
 .bed {
   right: 14px;
@@ -548,14 +522,8 @@ body {
   transform: translateY(-2px);
 }
 .frame .mini {
-  width: 38px;
-  height: 38px;
-}
-.frame .mini svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  overflow: visible;
+  width: 32px;
+  height: 32px;
 }
 .frame.is-home {
   outline-color: var(--coral);
@@ -574,10 +542,25 @@ body {
   padding: 2px 16px 14px;
   z-index: 4;
 }
-.hint {
-  font-size: 11px;
-  color: var(--cocoa-soft);
-  font-weight: 600;
+.summon {
+  border: 0;
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--cocoa);
+  background: var(--cream);
+  box-shadow: 0 4px 10px -7px var(--shadow);
+  transition: transform 0.12s, background 0.2s;
+}
+.summon:hover {
+  background: #fff;
+  transform: translateY(-1px);
+}
+.summon:focus-visible {
+  outline: 2px solid var(--coral);
 }
 .gear {
   margin-left: auto;
@@ -821,38 +804,6 @@ input[type='range']::-webkit-slider-thumb {
   background: linear-gradient(180deg, #eadcbf, #ddcaa6);
 }
 
-@keyframes bob {
-  0%,
-  100% {
-    transform: translateX(-50%) translateY(0);
-  }
-  50% {
-    transform: translateX(-50%) translateY(-6px);
-  }
-}
-@keyframes pop {
-  0% {
-    transform: translateX(-50%) scale(1);
-  }
-  35% {
-    transform: translateX(-50%) scale(1.12) translateY(-6px);
-  }
-  100% {
-    transform: translateX(-50%) scale(1);
-  }
-}
-@keyframes tip {
-  0%,
-  100% {
-    transform: translateX(-50%) rotate(0);
-  }
-  40% {
-    transform: translateX(-50%) rotate(-11deg);
-  }
-  70% {
-    transform: translateX(-50%) rotate(4deg);
-  }
-}
 @keyframes ripple {
   0% {
     opacity: 0.9;

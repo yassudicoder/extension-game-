@@ -18,11 +18,16 @@ export const WELLBEING_FLOOR = 30 // hard floor; the pet never drops into distre
 export const WELLBEING_START = 70 // a fresh, well-rested pet (= blend of the defaults below)
 export const WELLBEING_MAX = 100
 
-// ---- reminders ----
+// ---- water reminders ----
 export const DEFAULT_REMINDER_MIN = 90
 export const MIN_REMINDER_MIN = 30
 export const MAX_REMINDER_MIN = 240
 export const DEFAULT_SNOOZE_MIN = 20
+
+// ---- work/break breather ----
+export const DEFAULT_BREAK_MIN = 50
+export const MIN_BREAK_MIN = 25
+export const MAX_BREAK_MIN = 120
 
 /** A fresh state for a brand-new install (or after Reset). */
 export function defaultState(now: number): PetState {
@@ -31,11 +36,13 @@ export function defaultState(now: number): PetState {
     animal: 'cat',
     position: { corner: 'br', dx: 24, dy: 24 },
     hidden: false,
-    // hydration starts at its no-water baseline; rest starts full, so the derived
-    // wellbeing = 0.5*40 + 0.5*100 = 70 (a calm, content new pet).
-    stats: { hydration: 40, rest: 100, wellbeing: WELLBEING_START },
+    // hydration + nourishment start at their no-input baselines; rest starts full,
+    // so the derived wellbeing = 0.3*40 + 0.25*50 + 0.45*100 = 70 (calm, content).
+    stats: { hydration: 40, nourishment: 50, rest: 100, wellbeing: WELLBEING_START },
     lastWaterAt: null,
     waterLog: [],
+    lastFedAt: null,
+    snackLog: [],
     sleepMode: false,
     sleepUntil: null,
     activityState: 'active',
@@ -43,11 +50,14 @@ export function defaultState(now: number): PetState {
     reminderIntervalMin: DEFAULT_REMINDER_MIN,
     remindersEnabled: true,
     lastReminderAt: null,
+    breakRemindersEnabled: true,
+    breakIntervalMin: DEFAULT_BREAK_MIN,
+    lastBreakAt: now,
     snoozeUntil: null,
     lastNudgeAt: null,
     installedAt: now,
     lastTickAt: now,
-    todaysWins: { date: todayKey(now), water: 0, breaks: 0, pets: 0 },
+    todaysWins: { date: todayKey(now), water: 0, snacks: 0, breaks: 0, pets: 0 },
     history: [],
   }
 }
@@ -67,6 +77,7 @@ export function migrate(raw: unknown, now: number): PetState {
   merged.position = { ...base.position, ...(incoming.position ?? {}) }
   merged.todaysWins = { ...base.todaysWins, ...(incoming.todaysWins ?? {}) }
   merged.waterLog = Array.isArray(incoming.waterLog) ? incoming.waterLog : base.waterLog
+  merged.snackLog = Array.isArray(incoming.snackLog) ? incoming.snackLog : base.snackLog
   merged.history = Array.isArray(incoming.history) ? incoming.history : base.history
 
   // Validate enum-ish fields so a corrupt stored object can't poison the UI.

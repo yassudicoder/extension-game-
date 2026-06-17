@@ -7,10 +7,12 @@ import type { Animal, PetPosition, PetState } from './types'
  */
 export const MSG = {
   DRANK_WATER: 'DRANK_WATER',
+  FED: 'FED',
   PET_CLICKED: 'PET_CLICKED',
   TOGGLE_SLEEP: 'TOGGLE_SLEEP',
   SET_ANIMAL: 'SET_ANIMAL',
   SET_REMINDER: 'SET_REMINDER',
+  SET_BREAK: 'SET_BREAK',
   SNOOZE_REMINDER: 'SNOOZE_REMINDER',
   SET_POSITION: 'SET_POSITION',
   SET_HIDDEN: 'SET_HIDDEN',
@@ -22,10 +24,12 @@ export type MsgType = (typeof MSG)[keyof typeof MSG]
 
 export type Message =
   | { type: typeof MSG.DRANK_WATER }
+  | { type: typeof MSG.FED }
   | { type: typeof MSG.PET_CLICKED }
   | { type: typeof MSG.TOGGLE_SLEEP; on: boolean }
   | { type: typeof MSG.SET_ANIMAL; animal: Animal }
   | { type: typeof MSG.SET_REMINDER; intervalMin: number; enabled: boolean }
+  | { type: typeof MSG.SET_BREAK; intervalMin: number; enabled: boolean }
   | { type: typeof MSG.SNOOZE_REMINDER; minutes: number }
   | { type: typeof MSG.SET_POSITION; position: PetPosition }
   | { type: typeof MSG.SET_HIDDEN; hidden: boolean }

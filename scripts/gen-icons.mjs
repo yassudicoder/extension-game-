@@ -1,62 +1,14 @@
-// Generates the extension's PNG icons with zero dependencies (Node's zlib only).
+// Generates the extension's PNG icons with zero dependencies.
 // A tiny pastel pet face at 16/32/48/128. Run via `npm run icons` (also part of build).
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { deflateSync } from 'node:zlib'
+import { encodePng } from './png.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const OUT_DIR = join(here, '..', 'src', 'assets', 'icons')
 
-// ---- minimal PNG encoder (RGBA, 8-bit, no interlace) ----
-const CRC_TABLE = (() => {
-  const t = new Uint32Array(256)
-  for (let n = 0; n < 256; n++) {
-    let c = n
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
-    t[n] = c >>> 0
-  }
-  return t
-})()
-
-function crc32(buf) {
-  let c = 0xffffffff
-  for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8)
-  return (c ^ 0xffffffff) >>> 0
-}
-
-function chunk(type, data) {
-  const len = Buffer.alloc(4)
-  len.writeUInt32BE(data.length, 0)
-  const body = Buffer.concat([Buffer.from(type, 'ascii'), data])
-  const crc = Buffer.alloc(4)
-  crc.writeUInt32BE(crc32(body), 0)
-  return Buffer.concat([len, body, crc])
-}
-
-function encodePng(size, rgba) {
-  const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
-  const ihdr = Buffer.alloc(13)
-  ihdr.writeUInt32BE(size, 0)
-  ihdr.writeUInt32BE(size, 4)
-  ihdr[8] = 8 // bit depth
-  ihdr[9] = 6 // colour type RGBA
-  const stride = size * 4
-  const raw = Buffer.alloc((stride + 1) * size)
-  for (let y = 0; y < size; y++) {
-    raw[y * (stride + 1)] = 0 // filter type: none
-    rgba.copy(raw, y * (stride + 1) + 1, y * stride, y * stride + stride)
-  }
-  const idat = deflateSync(raw, { level: 9 })
-  return Buffer.concat([
-    sig,
-    chunk('IHDR', ihdr),
-    chunk('IDAT', idat),
-    chunk('IEND', Buffer.alloc(0)),
-  ])
-}
-
-// ---- draw a friendly pet face ----
+// ---- draw a friendly pet face (anti-aliased — these are app icons, not pixel art) ----
 function makeIcon(S) {
   const buf = Buffer.alloc(S * S * 4) // fully transparent
 
@@ -99,7 +51,7 @@ function makeIcon(S) {
   disc(S * 0.4, S * 0.54, S * 0.05, EYE)
   disc(S * 0.6, S * 0.54, S * 0.05, EYE)
 
-  return encodePng(S, buf)
+  return encodePng(S, S, buf)
 }
 
 mkdirSync(OUT_DIR, { recursive: true })
