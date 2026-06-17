@@ -256,7 +256,7 @@ export function createAnimator(
     playOnce('play')
   }
   function eat(): void {
-    spawn(['🍪'])
+    spawn(['🍎'])
     playOnce('play')
   }
   function nudge(): void {

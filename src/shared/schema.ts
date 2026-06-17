@@ -1,4 +1,4 @@
-import type { Animal, PetState } from './types'
+import type { Animal, EarnLedger, LastAwardAt, PetState } from './types'
 import { todayKey } from './time'
 
 // ---- storage ----
@@ -60,7 +60,8 @@ export function defaultState(now: number): PetState {
     todaysWins: { date: todayKey(now), water: 0, snacks: 0, breaks: 0, pets: 0 },
     history: [],
     biscuits: 0,
-    earnedTodayFromTime: 0,
+    earnLedger: { date: todayKey(now), water: 0, snacks: 0, pets: 0, breaks: 0, time: 0 },
+    lastAwardAt: { water: null, snack: null, pet: null },
     lastNightBonusDate: null,
     ownedPets: [...ANIMALS],
     inventory: {},
@@ -92,8 +93,23 @@ export function migrate(raw: unknown, now: number): PetState {
 
   // Economy / collection: default + sanitise for older stored objects.
   merged.biscuits = typeof incoming.biscuits === 'number' ? Math.max(0, incoming.biscuits) : 0
-  merged.earnedTodayFromTime =
-    typeof incoming.earnedTodayFromTime === 'number' ? incoming.earnedTodayFromTime : 0
+  const num0 = (v: unknown): number => (typeof v === 'number' && v >= 0 ? v : 0)
+  const tsOrNull = (v: unknown): number | null => (typeof v === 'number' && v >= 0 ? v : null)
+  const el = (
+    incoming.earnLedger && typeof incoming.earnLedger === 'object' ? incoming.earnLedger : {}
+  ) as Partial<EarnLedger>
+  merged.earnLedger = {
+    date: typeof el.date === 'string' ? el.date : base.earnLedger.date,
+    water: num0(el.water),
+    snacks: num0(el.snacks),
+    pets: num0(el.pets),
+    breaks: num0(el.breaks),
+    time: num0(el.time),
+  }
+  const la = (
+    incoming.lastAwardAt && typeof incoming.lastAwardAt === 'object' ? incoming.lastAwardAt : {}
+  ) as Partial<LastAwardAt>
+  merged.lastAwardAt = { water: tsOrNull(la.water), snack: tsOrNull(la.snack), pet: tsOrNull(la.pet) }
   merged.lastNightBonusDate =
     typeof incoming.lastNightBonusDate === 'string' ? incoming.lastNightBonusDate : null
   const owned = Array.isArray(incoming.ownedPets)

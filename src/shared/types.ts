@@ -48,6 +48,24 @@ export interface HistoryEntry {
   waters: number
 }
 
+/** Biscuits earned per source today (anti-farming daily caps). Reset on rollover. */
+export interface EarnLedger {
+  /** YYYY-MM-DD this ledger belongs to. */
+  date: string
+  water: number
+  snacks: number
+  pets: number
+  breaks: number
+  time: number
+}
+
+/** epoch ms of the last PAID (cooldown-gated) action of each type. */
+export interface LastAwardAt {
+  water: number | null
+  snack: number | null
+  pet: number | null
+}
+
 export interface PetState {
   /** Storage schema version, for forward-only migration. */
   schemaVersion: number
@@ -109,8 +127,10 @@ export interface PetState {
   // --- economy & collection (Phase 1 foundation; Phase 2 shop / Phase 3 house use the rest) ---
   /** Biscuit balance — in-game currency, no real money. Always clamped >= 0. */
   biscuits: number
-  /** Biscuits earned today from the time trickle; capped per day, reset on rollover. */
-  earnedTodayFromTime: number
+  /** Per-source biscuits earned today (daily caps); reset on rollover. */
+  earnLedger: EarnLedger
+  /** Cooldown anchors: last PAID water/snack/pet action. */
+  lastAwardAt: LastAwardAt
   /** YYYY-MM-DD the good-night bonus was last awarded (caps it to once per day). */
   lastNightBonusDate: string | null
   /** Pets the user owns and can set as the active pet. */

@@ -249,10 +249,10 @@ describe('biscuits (currency)', () => {
   it('time trickle pays while active, caps at 20/day, and resets the next day', () => {
     let s = defaultState(T0) // active by default
     for (let i = 0; i < 30; i++) s = applyTimeTrickle(s, T0 + i * 5 * MINUTE)
-    expect(s.earnedTodayFromTime).toBe(20)
+    expect(s.earnLedger.time).toBe(20)
     expect(s.biscuits).toBe(20)
     s = applyTimeTrickle(s, T0 + DAY) // new day → cap resets, trickle resumes
-    expect(s.earnedTodayFromTime).toBe(1)
+    expect(s.earnLedger.time).toBe(1)
     expect(s.biscuits).toBe(21)
   })
 
@@ -260,6 +260,52 @@ describe('biscuits (currency)', () => {
     expect(applyTimeTrickle({ ...defaultState(T0), activityState: 'idle' }, T0).biscuits).toBe(0)
     expect(applyTimeTrickle({ ...defaultState(T0), sleepMode: true }, T0).biscuits).toBe(0)
     expect(defaultState(T0).biscuits).toBeGreaterThanOrEqual(0)
+  })
+})
+
+describe('earning is exploit-resistant (spam-proof)', () => {
+  it('spam-clicking water pays once within the cooldown — but stats/wins still update', () => {
+    let s = defaultState(T0)
+    s = applyWater(s, T0)
+    s = applyWater(s, T0 + MINUTE)
+    s = applyWater(s, T0 + 2 * MINUTE)
+    expect(s.biscuits).toBe(3) // only the first click paid
+    expect(s.todaysWins.water).toBe(3) // every click still counts as a win
+    expect(s.waterLog.length).toBe(3) // hydration still updates each click
+    s = applyWater(s, T0 + 16 * MINUTE) // past the 15-min cooldown
+    expect(s.biscuits).toBe(6)
+  })
+
+  it('honours the snack (30m) and pet (10m) cooldowns', () => {
+    let snack = applyFeed(defaultState(T0), T0)
+    snack = applyFeed(snack, T0 + 10 * MINUTE) // within cooldown
+    expect(snack.biscuits).toBe(2)
+    expect(snack.todaysWins.snacks).toBe(2)
+
+    let pet = applyPet(defaultState(T0), T0)
+    pet = applyPet(pet, T0 + 5 * MINUTE) // within cooldown
+    expect(pet.biscuits).toBe(1)
+    expect(pet.todaysWins.pets).toBe(2)
+  })
+
+  it('stops paying water at the daily cap and resets next day', () => {
+    let s = defaultState(T0)
+    for (let i = 0; i < 8; i++) s = applyWater(s, T0 + i * 16 * MINUTE) // past cooldown each time
+    expect(s.earnLedger.water).toBe(9) // cap = 9 (3 paid waters)
+    expect(s.biscuits).toBe(9)
+    s = applyWater(s, T0 + DAY) // new day resets the cap
+    expect(s.earnLedger.water).toBe(3)
+    expect(s.biscuits).toBe(12)
+  })
+
+  it('caps break earnings at 20/day while still counting every break as a win', () => {
+    let s = defaultState(T0)
+    for (let i = 0; i < 5; i++) {
+      s = applyActivity(s, T0 + i * HOUR, 'idle')
+      s = applyActivity(s, T0 + i * HOUR + 30 * MINUTE, 'active') // a real 30-min break
+    }
+    expect(s.todaysWins.breaks).toBe(5) // all five credited as wins
+    expect(s.earnLedger.breaks).toBe(20) // but biscuit earnings capped at 20
   })
 })
 
@@ -284,7 +330,9 @@ describe('migrate validates stored data', () => {
   it('defaults the economy/collection fields for an old stored object', () => {
     const m = migrate({ animal: 'cat' }, T0)
     expect(m.biscuits).toBe(0)
-    expect(m.earnedTodayFromTime).toBe(0)
+    expect(m.earnLedger).toEqual({ date: m.earnLedger.date, water: 0, snacks: 0, pets: 0, breaks: 0, time: 0 })
+    expect(typeof m.earnLedger.date).toBe('string')
+    expect(m.lastAwardAt).toEqual({ water: null, snack: null, pet: null })
     expect(m.lastNightBonusDate).toBeNull()
     expect(m.ownedPets).toEqual(['cat', 'dog', 'bunny'])
     expect(m.inventory).toEqual({})
@@ -294,6 +342,20 @@ describe('migrate validates stored data', () => {
   it('sanitises a corrupt ownedPets list (drops unknowns, dedupes)', () => {
     const m = migrate({ ownedPets: ['cat', 'dragon', 'cat'] }, T0)
     expect(m.ownedPets).toEqual(['cat'])
+  })
+
+  it('sanitises a corrupt earn ledger and award timestamps', () => {
+    const m = migrate(
+      { earnLedger: { date: 5, water: -3, snacks: 2 }, lastAwardAt: { water: 'x', pet: 1000 } },
+      T0,
+    )
+    expect(m.earnLedger.water).toBe(0) // negative -> 0
+    expect(m.earnLedger.snacks).toBe(2) // valid kept
+    expect(m.earnLedger.time).toBe(0) // missing -> 0
+    expect(typeof m.earnLedger.date).toBe('string') // bad date -> default string
+    expect(m.lastAwardAt.water).toBeNull() // non-number -> null
+    expect(m.lastAwardAt.pet).toBe(1000) // valid kept
+    expect(m.lastAwardAt.snack).toBeNull() // missing -> null
   })
 })
 

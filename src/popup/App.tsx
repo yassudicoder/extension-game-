@@ -236,16 +236,20 @@ export function App() {
             <span className="cap">water</span>
           </button>
 
-          <button className="obj dish" aria-label="Feed your pet a snack" onClick={feed}>
+          <button className="obj dish" aria-label="Feed your pet some healthy food" onClick={feed}>
             <svg width="44" height="32" viewBox="0 0 44 32" aria-hidden="true">
-              <ellipse cx="22" cy="24" rx="20" ry="8" fill="#cdd7e2" />
-              <ellipse cx="22" cy="22" rx="20" ry="8" fill="#e7edf3" />
-              <ellipse cx="22" cy="21" rx="13" ry="5" fill="#cba06a" />
-              <circle cx="16" cy="20" r="2" fill="#9c6b3f" />
-              <circle cx="23" cy="21" r="2" fill="#9c6b3f" />
-              <circle cx="28" cy="19" r="1.6" fill="#9c6b3f" />
+              <ellipse cx="22" cy="25" rx="20" ry="7" fill="#cdd7e2" />
+              <ellipse cx="22" cy="23" rx="20" ry="7" fill="#e7edf3" />
+              {/* apple */}
+              <circle cx="19" cy="16" r="7.5" fill="#e0685a" />
+              <circle cx="21.5" cy="15" r="5" fill="#ec8377" />
+              <rect x="18.3" y="7.5" width="1.4" height="3" rx="0.6" fill="#7a5a3a" />
+              <ellipse cx="22.6" cy="8.6" rx="3" ry="1.5" fill="#7bb86a" />
+              {/* greens */}
+              <circle cx="31" cy="18" r="3.2" fill="#8cc06a" />
+              <circle cx="34.4" cy="20" r="2.4" fill="#79b257" />
             </svg>
-            <span className="cap">snack</span>
+            <span className="cap">food</span>
           </button>
 
           <button
@@ -276,12 +280,11 @@ export function App() {
             {state.todaysWins.water}
           </span>
           <span className="token">
-            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-              <circle cx="8" cy="8" r="7" fill="#cba06a" />
-              <circle cx="6" cy="6" r="1" fill="#7e5a34" />
-              <circle cx="10.5" cy="7" r="1" fill="#7e5a34" />
-              <circle cx="7" cy="10.5" r="1" fill="#7e5a34" />
-              <circle cx="11" cy="11" r="1" fill="#7e5a34" />
+            <svg width="15" height="16" viewBox="0 0 15 16" aria-hidden="true">
+              <circle cx="7" cy="9.5" r="5.6" fill="#e0685a" />
+              <circle cx="8.6" cy="8.3" r="3.4" fill="#ec8377" />
+              <rect x="6.4" y="3" width="1.2" height="2.3" rx="0.5" fill="#7a5a3a" />
+              <ellipse cx="9" cy="3.6" rx="2.1" ry="1.05" fill="#7bb86a" />
             </svg>
             {state.todaysWins.snacks}
           </span>

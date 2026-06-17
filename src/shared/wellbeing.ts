@@ -67,6 +67,21 @@ const BISCUITS_PET = 1
 const BISCUITS_NIGHT = 5 // good-night while it's actually late, once per day
 const BISCUITS_TIME_CAP = 20 // max biscuits/day from the passive time trickle
 
+// Anti-farming: a click only PAYS when both a per-type cooldown has elapsed since
+// the last *paid* action AND today's per-source cap (in biscuits) has headroom.
+// The action itself (animation, stats, win counter) always happens — only the
+// payout is gated.
+// TODO: for real/paid currency this is NOT enough — chrome.storage is fully
+// user-editable, so the balance and these earning rules MUST be validated and
+// enforced server-side. Client-side gating only deters casual spam-farming.
+const WATER_COOLDOWN_MS = 15 * MINUTE
+const WATER_CAP = 9
+const SNACK_COOLDOWN_MS = 30 * MINUTE
+const SNACK_CAP = 6
+const PET_COOLDOWN_MS = 10 * MINUTE
+const PET_CAP = 5
+const BREAK_CAP = 20 // break already needs a real idle→active gap; just cap the total
+
 // ---- tiny helpers ----
 export function clamp(v: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, v))
@@ -134,7 +149,7 @@ function rolloverIfNeeded(s: PetState, now: number): PetState {
     ...s,
     history,
     todaysWins: { date: today, water: 0, snacks: 0, breaks: 0, pets: 0 },
-    earnedTodayFromTime: 0, // reset the daily time-earning cap
+    earnLedger: { date: today, water: 0, snacks: 0, pets: 0, breaks: 0, time: 0 }, // reset daily caps
   }
 }
 
@@ -170,6 +185,32 @@ export function applyTick(state: PetState, now: number): PetState {
   }
 }
 
+/**
+ * Decide a cooldown-gated payout. Returns updated biscuits / ledger / award stamp.
+ * Pays only if the per-type cooldown has elapsed since the last paid action AND the
+ * source's daily cap has headroom; otherwise returns the balance unchanged.
+ */
+function tryAward(
+  s: PetState,
+  now: number,
+  ledgerKey: 'water' | 'snacks' | 'pets',
+  lastKey: 'water' | 'snack' | 'pet',
+  reward: number,
+  cooldownMs: number,
+  cap: number,
+): Pick<PetState, 'biscuits' | 'earnLedger' | 'lastAwardAt'> {
+  const last = s.lastAwardAt[lastKey]
+  const cooled = last == null || now - last >= cooldownMs
+  if (!cooled || s.earnLedger[ledgerKey] >= cap) {
+    return { biscuits: s.biscuits, earnLedger: s.earnLedger, lastAwardAt: s.lastAwardAt }
+  }
+  return {
+    biscuits: addBiscuits(s.biscuits, reward),
+    earnLedger: { ...s.earnLedger, [ledgerKey]: s.earnLedger[ledgerKey] + reward },
+    lastAwardAt: { ...s.lastAwardAt, [lastKey]: now },
+  }
+}
+
 /** Log a glass of water: instantly lifts hydration (and therefore wellbeing). */
 export function applyWater(state: PetState, now: number): PetState {
   const s = applyTick(state, now)
@@ -187,7 +228,7 @@ export function applyWater(state: PetState, now: number): PetState {
       wellbeing: deriveWellbeing(hydration, s.stats.rest, s.stats.nourishment),
     },
     todaysWins: { ...s.todaysWins, water: s.todaysWins.water + 1 },
-    biscuits: addBiscuits(s.biscuits, BISCUITS_WATER),
+    ...tryAward(s, now, 'water', 'water', BISCUITS_WATER, WATER_COOLDOWN_MS, WATER_CAP),
   }
 }
 
@@ -208,7 +249,7 @@ export function applyFeed(state: PetState, now: number): PetState {
       wellbeing: deriveWellbeing(s.stats.hydration, s.stats.rest, nourishment),
     },
     todaysWins: { ...s.todaysWins, snacks: s.todaysWins.snacks + 1 },
-    biscuits: addBiscuits(s.biscuits, BISCUITS_SNACK),
+    ...tryAward(s, now, 'snacks', 'snack', BISCUITS_SNACK, SNACK_COOLDOWN_MS, SNACK_CAP),
   }
 }
 
@@ -224,7 +265,7 @@ export function applyPet(state: PetState, now: number): PetState {
       wellbeing: deriveWellbeing(s.stats.hydration, rest, s.stats.nourishment),
     },
     todaysWins: { ...s.todaysWins, pets: s.todaysWins.pets + 1 },
-    biscuits: addBiscuits(s.biscuits, BISCUITS_PET),
+    ...tryAward(s, now, 'pets', 'pet', BISCUITS_PET, PET_COOLDOWN_MS, PET_CAP),
   }
 }
 
@@ -242,12 +283,16 @@ export function applyActivity(state: PetState, now: number, activity: ActivitySt
   let todaysWins = s.todaysWins
   let lastBreakAt = s.lastBreakAt
   let biscuits = s.biscuits
+  let earnLedger = s.earnLedger
   if (activity === 'active' && wasResting && restedMs >= BREAK_MIN_MS) {
     todaysWins = { ...todaysWins, breaks: todaysWins.breaks + 1 }
     lastBreakAt = now // an actual break resets the breather timer
-    biscuits = addBiscuits(biscuits, BISCUITS_BREAK)
+    if (earnLedger.breaks < BREAK_CAP) {
+      biscuits = addBiscuits(biscuits, BISCUITS_BREAK)
+      earnLedger = { ...earnLedger, breaks: earnLedger.breaks + BISCUITS_BREAK }
+    }
   }
-  return { ...s, activityState: activity, lastActiveAt: now, todaysWins, lastBreakAt, biscuits }
+  return { ...s, activityState: activity, lastActiveAt: now, todaysWins, lastBreakAt, biscuits, earnLedger }
 }
 
 /** Toggle manual "good night" sleep; schedules an auto-wake, and rewards a real
@@ -278,11 +323,11 @@ export function applySleep(state: PetState, now: number, on: boolean): PetState 
 export function applyTimeTrickle(state: PetState, now: number): PetState {
   const s = rolloverIfNeeded(state, now) // keep the daily cap fresh
   if (s.sleepMode || s.activityState !== 'active') return s
-  if (s.earnedTodayFromTime >= BISCUITS_TIME_CAP) return s
+  if (s.earnLedger.time >= BISCUITS_TIME_CAP) return s
   return {
     ...s,
     biscuits: addBiscuits(s.biscuits, 1),
-    earnedTodayFromTime: s.earnedTodayFromTime + 1,
+    earnLedger: { ...s.earnLedger, time: s.earnLedger.time + 1 },
   }
 }
 
