@@ -190,6 +190,64 @@
   }
 }
 
+/* livestock share the pet's crisp pixel scaling */
+.critter {
+  image-rendering: pixelated;
+}
+
+/* ---- ambient magic: warm pollen motes drift by day, fireflies glow at night ---- */
+.ambient {
+  position: absolute;
+  inset: 0 0 8% 0;
+  z-index: 4;
+  pointer-events: none;
+}
+.mote {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff6d0;
+  opacity: 0.5;
+  animation: mote-drift 9s ease-in-out infinite;
+  transition:
+    background 1.2s var(--ease),
+    box-shadow 1.2s var(--ease);
+}
+@keyframes mote-drift {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(16px, -20px);
+  }
+  50% {
+    transform: translate(-8px, -36px);
+  }
+  75% {
+    transform: translate(12px, -18px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+:root[data-time='night'] .mote {
+  background: var(--lantern);
+  box-shadow: 0 0 9px 2px rgba(255, 217, 138, 0.85);
+  animation:
+    mote-drift 9s ease-in-out infinite,
+    firefly-blink 2.6s ease-in-out infinite;
+}
+@keyframes firefly-blink {
+  0%,
+  100% {
+    opacity: 0.12;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
 /* ---- the hanging sign + copy ---- */
 .hero__content {
   position: relative;
@@ -378,12 +436,31 @@
 }
 
 @media (max-width: 620px) {
+  /* lift the sign toward the top so the lower third stays a clear, living
+     farm band — the cow, chickens and cat read crisply below the card,
+     instead of the card blanketing the whole scene */
+  .hero__content {
+    align-items: flex-start;
+    padding-top: clamp(82px, 15vh, 116px);
+    padding-bottom: 24vh;
+  }
   .sign {
     max-width: none;
+    background: rgba(251, 246, 234, 0.95); /* a hair translucent — farm peeks through */
   }
   .pet {
-    bottom: 7%;
+    bottom: 8%;
     z-index: 6;
+  }
+  /* dog + bunny rest back at the farm; the cat + cow + chickens keep it alive */
+  .pet--extra {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mote {
+    animation: none !important;
   }
 }
 

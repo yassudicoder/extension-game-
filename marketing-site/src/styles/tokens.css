@@ -70,6 +70,11 @@
   --barn: #9c5a4a;
   --barn-roof: #7a4438;
   --barn-door: #5e3329;
+  /* oak — warm fence/beam wood for the header banner + footer board */
+  --oak: #b9874f;
+  --oak-mid: #a8743f;
+  --oak-deep: #6f4a28;
+  --oak-grain: #8a5e34;
 
   /* type */
   --font-display: 'Fredoka', system-ui, sans-serif;

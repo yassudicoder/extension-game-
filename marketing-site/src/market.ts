@@ -111,6 +111,19 @@ function buildGrows(): void {
   }
 }
 
+// §4 — replace the system emoji (they read "AI-generated") with on-palette icons.
+function buildLoopIcons(): void {
+  const icons = [
+    ...document.querySelectorAll<HTMLElement>('.section--biscuits .habit[data-note] .habit__i'),
+  ]
+  if (icons.length < 4) return
+  const shapes = ['px-drop', 'px-leaf', 'px-moon', 'px-heart'] // water · break · sleep · pet
+  icons.forEach((i, k) => {
+    i.textContent = ''
+    i.classList.add(shapes[k])
+  })
+}
+
 // §4 — Pip comments on the gentle loop; chips swap his note on hover/focus.
 function buildPipNote(): void {
   const note = document.getElementById('pip-note')
@@ -277,6 +290,7 @@ export function initSections(): void {
   buildGrows()
   buildSeasons()
   buildMarket()
+  buildLoopIcons()
   buildPipNote()
   buildCoinReveal()
   setFooterWhen()
