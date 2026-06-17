@@ -25,3 +25,14 @@ on one grid.
 
 Permissive options to consider (verify the license yourself): **Sprout Lands**
 (Cup Nooble), **Cozy Farm**, **Tiny Ranch**, and similar farming tilesets on itch.io.
+
+## Building locally (important)
+The raw pack files in this folder are **git-ignored** and are **not** committed —
+the chosen pack (Sprout Lands by Cup Nooble) is free for commercial use but its
+license does not permit redistributing the raw assets, and this repo is public.
+
+To build the site locally you must **download the pack yourself and place its
+sheet(s) in this folder** (the filenames the build expects are wired in
+`src/scene/tileset.ts`). The deployed/built site that bakes the art into `dist/`
+is fine — only the raw source sheets stay out of git. Credit: see `CREDITS.md`.
+

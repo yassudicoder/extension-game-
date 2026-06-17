@@ -3,3 +3,10 @@ dist/
 *.local
 .DS_Store
 .vite/
+
+# Raw pixel-tileset pack (e.g. Sprout Lands by Cup Nooble — free for commercial
+# use but NOT CC0). Do NOT commit the raw art to this public repo; download the
+# pack into src/assets/scene/ to build locally. The built/deployed site baking the
+# art into dist/ is fine — only the raw source files stay out of git.
+src/assets/scene/*
+!src/assets/scene/README.md
