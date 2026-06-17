@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pocket Pet — the burrow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --oat:#F2E6C9; --oat-deep:#E8D7B2; --wall-top:#F6ECD4;
+    --oak:#DBA968; --oak-deep:#C68F50; --plank:#B27E45;
+    --sky-day-a:#A9D2EA; --sky-day-b:#DCEFF6; --sun:#FFE2A0; --sun-core:#FFF3CF;
+    --sky-night-a:#222a55; --sky-night-b:#34386a; --moon:#EFF2FF;
+    --lamp:#FFD98A; --lamp-glow:rgba(255,216,134,.55);
+    --coral:#F1A28C; --coral-deep:#E78B73;
+    --cocoa:#4A3F35; --cocoa-soft:#897868; --cream:#FBF4E4; --cream-deep:#F2E7CF;
+    --shadow:rgba(74,63,53,.16); --shadow-soft:rgba(74,63,53,.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    min-height:100vh; display:grid; place-items:center;
+    background:
+      radial-gradient(120% 120% at 50% 0%, #efe7da 0%, #e3dccd 60%, #d8d0bf 100%);
+    font-family:"Nunito",system-ui,sans-serif; color:var(--cocoa); padding:24px;
+  }
+
+  /* ---- the popup frame (true extension-popup size) ---- */
+  .popup{
+    width:340px; height:564px; position:relative; overflow:hidden;
+    border-radius:26px; background:var(--oat);
+    box-shadow:0 24px 60px -18px var(--shadow), 0 4px 0 rgba(255,255,255,.5) inset;
+    display:flex; flex-direction:column;
+  }
+
+  /* ---- title strip (sits on the wall) ---- */
+  .nameplate{
+    position:relative; z-index:5; padding:15px 18px 6px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .nameplate h1{
+    font-family:"Fredoka",sans-serif; font-weight:600; font-size:21px;
+    letter-spacing:.2px; line-height:1; color:var(--cocoa);
+  }
+  .mood{font-size:12.5px; font-weight:600; color:var(--cocoa-soft); margin-top:3px}
+  .comfort{margin-left:auto; display:flex; align-items:center; gap:6px}
+  .comfort .label{font-size:10px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--cocoa-soft)}
+  .heart{width:30px; height:27px; position:relative}
+  .heart svg{width:100%; height:100%; display:block}
+
+  /* ---- the room ---- */
+  .room{position:relative; flex:1; overflow:hidden}
+  .wall{
+    position:absolute; inset:0 0 33% 0;
+    background:linear-gradient(180deg, var(--wall-top), var(--oat-deep));
+  }
+  /* round window — the signature, day or night */
+  .window{
+    position:absolute; top:30px; left:50%; transform:translateX(-50%);
+    width:148px; height:148px; border-radius:50%;
+    background:linear-gradient(180deg, var(--sky-day-a), var(--sky-day-b));
+    box-shadow:0 0 0 9px #fff7e8, 0 0 0 13px var(--oak), 0 10px 22px -8px var(--shadow);
+    overflow:hidden; transition:background .8s ease;
+  }
+  .window::after{ /* sill */
+    content:""; position:absolute; left:-14px; right:-14px; bottom:-4px; height:12px;
+    background:var(--oak-deep); border-radius:6px; box-shadow:0 4px 8px -3px var(--shadow);
+  }
+  .sun{
+    position:absolute; top:30px; left:50%; transform:translateX(-50%);
+    width:54px; height:54px; border-radius:50%;
+    background:radial-gradient(circle at 50% 45%, var(--sun-core), var(--sun) 70%);
+    box-shadow:0 0 28px 10px rgba(255,226,160,.7); transition:opacity .6s, transform .8s;
+  }
+  .moon{
+    position:absolute; top:30px; left:46%; width:46px; height:46px; border-radius:50%;
+    background:radial-gradient(circle at 62% 38%, #ffffff, var(--moon) 72%);
+    box-shadow:0 0 22px 6px rgba(220,228,255,.5);
+    opacity:0; transition:opacity .6s;
+  }
+  .moon::before{ content:""; position:absolute; top:7px; left:20px; width:34px; height:34px; border-radius:50%; background:var(--sky-night-b); }
+  .star{position:absolute; width:3px; height:3px; border-radius:50%; background:#fff; opacity:0; transition:opacity .6s}
+  .cloud{position:absolute; height:14px; border-radius:10px; background:#ffffff; opacity:.85; filter:blur(.3px); transition:opacity .6s}
+
+  /* hanging plant, top-left — a little life */
+  .plant{position:absolute; top:-6px; left:16px; width:42px; text-align:center; z-index:2}
+  .plant .pot{margin-top:38px; width:30px; height:22px; margin-inline:auto; background:linear-gradient(180deg,#e7a07f,#cf7f5c); border-radius:4px 4px 9px 9px}
+  .plant .vine{position:absolute; top:0; left:50%; width:2px; height:40px; background:#9cae6e}
+  .leaf{position:absolute; width:13px; height:9px; background:#9cae6e; border-radius:0 60% 0 60%}
+
+  /* hanging lamp + warm pool of light over the pet */
+  .lamp{position:absolute; top:0; left:50%; transform:translateX(-50%); z-index:2}
+  .lamp .cord{width:2px; height:150px; margin-inline:auto; background:var(--cocoa-soft); opacity:.5}
+  .lamp .dome{width:46px; height:24px; border-radius:24px 24px 6px 6px; background:linear-gradient(180deg,#5d5044,#473d33); margin-top:-2px}
+  .glow{
+    position:absolute; top:150px; left:50%; transform:translateX(-50%);
+    width:200px; height:230px; pointer-events:none;
+    background:radial-gradient(60% 55% at 50% 30%, var(--lamp-glow), rgba(255,216,134,0) 70%);
+    transition:opacity .8s; z-index:1;
+  }
+
+  /* wood floor */
+  .floor{
+    position:absolute; left:0; right:0; bottom:0; height:33%;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 47px, rgba(120,82,40,.16) 47px 49px),
+      linear-gradient(180deg, var(--oak), var(--oak-deep));
+    box-shadow:0 -1px 0 rgba(255,255,255,.25) inset;
+  }
+  .baseboard{position:absolute; left:0; right:0; bottom:33%; height:7px; background:#caa06a; box-shadow:0 1px 4px -1px var(--shadow)}
+
+  /* the stage where pet + objects sit */
+  .stage{position:absolute; left:0; right:0; bottom:0; height:60%; z-index:3}
+  .rug{
+    position:absolute; bottom:30px; left:50%; transform:translateX(-50%);
+    width:176px; height:34px; border-radius:50%;
+    background:radial-gradient(circle, #f3c0ad 0 40%, #ecb09a 41% 64%, #f3c0ad 65%);
+    opacity:.9; box-shadow:0 6px 12px -6px var(--shadow);
+  }
+
+  .pet{
+    position:absolute; bottom:34px; left:50%; transform:translateX(-50%);
+    width:118px; height:118px; transform-origin:50% 92%; cursor:pointer;
+    border:0; background:transparent; padding:0;
+    filter:drop-shadow(0 8px 7px rgba(74,63,53,.22));
+    animation:bob 3.4s ease-in-out infinite;
+  }
+  .pet:focus-visible{outline:3px solid var(--coral); outline-offset:6px; border-radius:24px}
+  .pet svg{width:100%; height:100%; display:block; overflow:visible}
+  .pet.pop{animation:pop .5s ease}
+  .pet.tip{animation:tip .7s ease-in-out}
+
+  /* water bowl (left) and bed+lamp (right) — these ARE the controls */
+  .obj{position:absolute; bottom:14px; border:0; background:transparent; cursor:pointer; padding:6px; border-radius:16px; transition:transform .15s}
+  .obj:hover{transform:translateY(-2px)}
+  .obj:focus-visible{outline:3px solid var(--coral); outline-offset:2px}
+  .obj .cap{display:block; font-size:10.5px; font-weight:700; color:var(--cocoa); margin-top:3px; text-align:center; letter-spacing:.2px}
+  .bowl{left:18px}
+  .bed{right:14px}
+  .obj svg{display:block; margin-inline:auto; filter:drop-shadow(0 4px 5px rgba(74,63,53,.18))}
+
+  /* water ripple + floating drop when you fill the bowl */
+  .ripple{position:absolute; bottom:30px; left:43px; width:30px; height:9px; border:2px solid #7fc6e6; border-radius:50%; opacity:0}
+  .ripple.go{animation:ripple .7s ease-out}
+  .drop{position:absolute; bottom:62px; left:55px; font-size:15px; opacity:0; pointer-events:none}
+  .drop.go{animation:rise .9s ease-out}
+
+  /* ---- shelf of today's little wins ---- */
+  .shelf{
+    position:relative; z-index:4; margin:0 16px; padding:10px 14px 12px;
+    background:linear-gradient(180deg,#e9c79a,#dcb27f);
+    border-radius:14px; box-shadow:0 8px 16px -10px var(--shadow), 0 2px 0 rgba(255,255,255,.35) inset;
+    margin-top:-2px;
+  }
+  .shelf h2{font-family:"Fredoka",sans-serif; font-size:12px; font-weight:600; color:#6e4f30; letter-spacing:.3px; margin-bottom:7px}
+  .tokens{display:flex; gap:14px; align-items:flex-end}
+  .token{display:flex; align-items:center; gap:5px; font-weight:800; font-size:13px; color:#5f4427}
+  .token svg{filter:drop-shadow(0 2px 2px rgba(74,63,53,.18))}
+
+  /* ---- residents (switch your companion) ---- */
+  .residents{display:flex; gap:9px; padding:13px 16px 6px; z-index:4}
+  .frame{
+    flex:1; border:0; cursor:pointer; padding:8px 4px 6px; border-radius:14px;
+    background:var(--cream); box-shadow:0 4px 10px -7px var(--shadow);
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    font-family:"Fredoka",sans-serif; font-size:11.5px; font-weight:600; color:var(--cocoa-soft);
+    transition:transform .14s, box-shadow .2s;
+    outline:2px solid transparent;
+  }
+  .frame:hover{transform:translateY(-2px)}
+  .frame .mini{width:38px; height:38px}
+  .frame .mini svg{width:100%; height:100%; display:block}
+  .frame.is-home{outline-color:var(--coral); background:#fff; color:var(--cocoa); box-shadow:0 6px 14px -8px var(--coral-deep)}
+  .frame:focus-visible{outline-color:var(--coral)}
+
+  /* ---- toolbar / gear ---- */
+  .toolbar{display:flex; align-items:center; padding:2px 16px 14px; z-index:4}
+  .hint{font-size:11px; color:var(--cocoa-soft); font-weight:600}
+  .gear{
+    margin-left:auto; width:36px; height:36px; border-radius:12px; border:0; cursor:pointer;
+    background:var(--cream); color:var(--cocoa-soft); display:grid; place-items:center;
+    box-shadow:0 4px 10px -7px var(--shadow); transition:transform .3s, background .2s;
+  }
+  .gear:hover{background:#fff; color:var(--cocoa)}
+  .gear:focus-visible{outline:2px solid var(--coral)}
+  .open .gear{transform:rotate(60deg)}
+
+  /* ---- settings drawer (tucked away) ---- */
+  .drawer{
+    position:absolute; left:0; right:0; bottom:0; z-index:9;
+    background:var(--cream); border-radius:22px 22px 0 0;
+    box-shadow:0 -16px 40px -18px var(--shadow);
+    padding:16px 18px 20px; transform:translateY(110%); transition:transform .34s cubic-bezier(.2,.9,.3,1);
+  }
+  .open .drawer{transform:translateY(0)}
+  .drawer .grab{width:38px; height:4px; border-radius:4px; background:var(--cream-deep); margin:0 auto 12px}
+  .drawer h3{font-family:"Fredoka",sans-serif; font-size:14px; font-weight:600; margin-bottom:10px}
+  .opt{display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--cream-deep)}
+  .opt:last-of-type{border-bottom:0}
+  .opt span{font-size:13px; font-weight:700}
+  .switch{position:relative; width:42px; height:24px; cursor:pointer}
+  .switch input{opacity:0; width:100%; height:100%; margin:0; cursor:pointer}
+  .track{position:absolute; inset:0; border-radius:14px; background:var(--cream-deep); transition:background .2s}
+  .knob{position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 3px var(--shadow); transition:left .2s}
+  .switch input:checked + .track{background:var(--coral)}
+  .switch input:checked + .track + .knob{left:21px}
+  .range-row{display:flex; flex-direction:column; gap:7px; padding:11px 0; border-bottom:1px solid var(--cream-deep)}
+  .range-row .top{display:flex; justify-content:space-between; font-size:13px; font-weight:700}
+  input[type=range]{-webkit-appearance:none; appearance:none; height:6px; border-radius:6px; background:var(--cream-deep)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:var(--coral); cursor:pointer; box-shadow:0 1px 3px var(--shadow)}
+  .reset{margin-top:14px; width:100%; padding:11px; border:0; border-radius:12px; cursor:pointer;
+    background:transparent; color:var(--coral-deep); font-family:"Nunito"; font-weight:800; font-size:13px}
+  .reset:hover{background:#fbece6}
+  .footer{text-align:center; font-size:10.5px; color:var(--cocoa-soft); font-weight:600; padding:8px 0 2px}
+
+  @media (prefers-reduced-motion: reduce){
+    .pet{animation:none}
+    *{transition-duration:.001ms !important; animation-duration:.001ms !important}
+  }
+
+  @keyframes bob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-6px)}}
+  @keyframes pop{0%{transform:translateX(-50%) scale(1)}35%{transform:translateX(-50%) scale(1.12) translateY(-6px)}100%{transform:translateX(-50%) scale(1)}}
+  @keyframes tip{0%,100%{transform:translateX(-50%) rotate(0)}40%{transform:translateX(-50%) rotate(-11deg)}70%{transform:translateX(-50%) rotate(4deg)}}
+  @keyframes ripple{0%{opacity:.9; transform:scale(.5)}100%{opacity:0; transform:scale(1.5)}}
+  @keyframes rise{0%{opacity:0; transform:translateY(0) scale(.6)}25%{opacity:1}100%{opacity:0; transform:translateY(-34px) scale(1)}}
+
+  /* night */
+  .night .window{background:linear-gradient(180deg,var(--sky-night-a),var(--sky-night-b))}
+  .night .sun{opacity:0; transform:translateX(-50%) translateY(20px)}
+  .night .moon{opacity:1}
+  .night .star{opacity:.9}
+  .night .cloud{opacity:.12}
+  .night .glow{opacity:.35}
+  .night .wall{background:linear-gradient(180deg,#eadcbf,#ddcaa6)}
+</style>
+</head>
+<body>
+  <div class="popup" id="popup">
+    <!-- title -->
+    <div class="nameplate">
+      <div>
+        <h1 id="petName">Pip</h1>
+        <div class="mood" id="mood">content and cozy</div>
+      </div>
+      <div class="comfort">
+        <span class="label">comfy</span>
+        <span class="heart" id="heart"></span>
+      </div>
+    </div>
+
+    <!-- the room -->
+    <div class="room">
+      <div class="wall"></div>
+
+      <div class="window">
+        <div class="cloud" style="top:42px;left:18px;width:34px"></div>
+        <div class="cloud" style="top:74px;left:78px;width:26px"></div>
+        <span class="star" style="top:30px;left:34px"></span>
+        <span class="star" style="top:54px;left:104px"></span>
+        <span class="star" style="top:92px;left:46px"></span>
+        <span class="star" style="top:108px;left:96px"></span>
+        <div class="sun"></div>
+        <div class="moon"></div>
+      </div>
+
+      <div class="plant">
+        <span class="vine"></span>
+        <span class="leaf" style="top:6px;left:8px"></span>
+        <span class="leaf" style="top:16px;left:24px;transform:scaleX(-1)"></span>
+        <span class="leaf" style="top:28px;left:6px"></span>
+        <div class="pot"></div>
+      </div>
+
+      <div class="lamp"><div class="cord"></div><div class="dome"></div></div>
+      <div class="glow"></div>
+
+      <div class="baseboard"></div>
+      <div class="floor"></div>
+
+      <div class="stage">
+        <div class="rug"></div>
+
+        <button class="pet" id="pet" aria-label="Pet Pip"></button>
+
+        <span class="ripple" id="ripple"></span>
+        <span class="drop" id="drop">💧</span>
+
+        <button class="obj bowl" id="bowl" aria-label="Fill the water bowl — I had a glass">
+          <svg width="48" height="34" viewBox="0 0 48 34" aria-hidden="true">
+            <ellipse cx="24" cy="24" rx="22" ry="9" fill="#cdd7e2"/>
+            <ellipse cx="24" cy="22" rx="22" ry="9" fill="#e7edf3"/>
+            <ellipse id="water" cx="24" cy="22" rx="16" ry="6" fill="#8fd0ee"/>
+            <ellipse cx="20" cy="20.5" rx="5" ry="1.6" fill="#bfe7f7"/>
+          </svg>
+          <span class="cap">water</span>
+        </button>
+
+        <button class="obj bed" id="bed" aria-label="Tuck Pip in for the night">
+          <svg width="58" height="36" viewBox="0 0 58 36" aria-hidden="true">
+            <ellipse cx="29" cy="27" rx="27" ry="8" fill="#caa06a"/>
+            <path d="M5 27 Q4 13 29 12 Q54 13 53 27 Z" fill="#e7c79c"/>
+            <ellipse cx="29" cy="22" rx="20" ry="6.5" fill="#f6ead2"/>
+            <path d="M38 18 q8 -1 9 6" stroke="#cf9e6c" stroke-width="3" fill="none" stroke-linecap="round"/>
+          </svg>
+          <span class="cap" id="bedcap">good night</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- today's little wins -->
+    <div class="shelf">
+      <h2>today's little wins</h2>
+      <div class="tokens">
+        <span class="token"><svg width="14" height="18" viewBox="0 0 14 18"><path d="M7 0 C7 0 13 8 13 12 A6 6 0 1 1 1 12 C1 8 7 0 7 0Z" fill="#7fc6e6"/></svg><span id="tWater">3</span></span>
+        <span class="token"><svg width="17" height="16" viewBox="0 0 17 16"><path d="M2 14 C2 5 9 1 15 1 C15 9 9 14 2 14Z" fill="#9cae6e"/><path d="M3 13 C6 9 10 6 13 4" stroke="#7d9056" stroke-width="1.2" fill="none"/></svg><span id="tBreaks">1</span></span>
+        <span class="token"><svg width="17" height="15" viewBox="0 0 17 15"><path d="M8.5 14 C2 9 1 5 3.5 2.5 C5.5 .5 8 2 8.5 4 C9 2 11.5 .5 13.5 2.5 C16 5 15 9 8.5 14Z" fill="#f1a28c"/></svg><span id="tPets">2</span></span>
+      </div>
+    </div>
+
+    <!-- residents -->
+    <div class="residents" id="residents">
+      <button class="frame is-home" data-animal="cat"><span class="mini"></span>Cat</button>
+      <button class="frame" data-animal="dog"><span class="mini"></span>Dog</button>
+      <button class="frame" data-animal="bunny"><span class="mini"></span>Bunny</button>
+    </div>
+
+    <div class="toolbar">
+      <span class="hint">tap the bowl, pet Pip, tuck them in</span>
+      <button class="gear" id="gear" aria-label="Settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9 4a7 7 0 00-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 00-1.7-1l-.4-2.6H9.6L9.2 4a7 7 0 00-1.7 1l-2.4-1-2 3.4L3.1 11a7 7 0 000 2l-2 1.6 2 3.4 2.4-1a7 7 0 001.7 1l.4 2.6h4.8l.4-2.6a7 7 0 001.7-1l2.4 1 2-3.4-2-1.6c.06-.33.1-.66.1-1z"/></svg>
+      </button>
+    </div>
+
+    <!-- settings drawer -->
+    <div class="drawer" id="drawer">
+      <div class="grab"></div>
+      <h3>settings</h3>
+      <div class="range-row">
+        <div class="top"><span>gentle water reminders</span>
+          <label class="switch"><input type="checkbox" id="remOn" checked /><span class="track"></span><span class="knob"></span></label>
+        </div>
+        <input type="range" id="interval" min="30" max="240" step="15" value="90" />
+        <div style="font-size:12px;color:var(--cocoa-soft);font-weight:700">every <span id="ivLabel">90</span> min · never while you're away or asleep</div>
+      </div>
+      <div class="opt"><span>hide Pip on pages</span>
+        <label class="switch"><input type="checkbox" id="hideOn" /><span class="track"></span><span class="knob"></span></label>
+      </div>
+      <button class="reset">start fresh — Pip stays happy 💛</button>
+      <div class="footer">Pocket Pet · be kind to yourself today</div>
+    </div>
+  </div>
+
+<script>
+  // --- pet sprites (same shapes as the extension's src/shared/sprites.ts) ---
+  const PAL = {
+    cat:{body:'#b9c2cf',ear:'#a6b0bf',accent:'#f3a9b8'},
+    dog:{body:'#e2c19b',ear:'#caa17e',accent:'#f3a9b8'},
+    bunny:{body:'#f3eef0',ear:'#e7dde1',accent:'#f3a9b8'},
+  };
+  const face = `
+    <circle cx="31" cy="66" r="5.5" fill="#f3a9b8" opacity=".7"/>
+    <circle cx="69" cy="66" r="5.5" fill="#f3a9b8" opacity=".7"/>
+    <g class="eyes-open">
+      <circle cx="40" cy="55" r="4.6" fill="#2f2a33"/><circle cx="60" cy="55" r="4.6" fill="#2f2a33"/>
+      <circle cx="41.6" cy="53.4" r="1.5" fill="#fff"/><circle cx="61.6" cy="53.4" r="1.5" fill="#fff"/>
+    </g>
+    <g class="eyes-shut" style="display:none">
+      <path d="M35 56 q5 4 10 0" stroke="#2f2a33" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <path d="M55 56 q5 4 10 0" stroke="#2f2a33" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    </g>
+    <path d="M46 65 q4 4 8 0" stroke="#2f2a33" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  function inner(a){
+    const p=PAL[a];
+    if(a==='cat')return `<path d="M26 40 L31 14 L48 34 Z" fill="${p.ear}"/><path d="M74 40 L69 14 L52 34 Z" fill="${p.ear}"/><path d="M31 33 L33 20 L42 32 Z" fill="${p.accent}"/><path d="M69 33 L67 20 L58 32 Z" fill="${p.accent}"/><ellipse cx="50" cy="60" rx="33" ry="31" fill="${p.body}"/>${face}`;
+    if(a==='dog')return `<ellipse cx="20" cy="56" rx="11" ry="20" fill="${p.ear}"/><ellipse cx="80" cy="56" rx="11" ry="20" fill="${p.ear}"/><ellipse cx="50" cy="58" rx="33" ry="31" fill="${p.body}"/><ellipse cx="50" cy="70" rx="15" ry="11" fill="#fff7ee" opacity=".7"/>${face}`;
+    return `<ellipse cx="38" cy="22" rx="7" ry="22" fill="${p.ear}"/><ellipse cx="62" cy="22" rx="7" ry="22" fill="${p.ear}"/><ellipse cx="38" cy="24" rx="3" ry="15" fill="${p.accent}"/><ellipse cx="62" cy="24" rx="3" ry="15" fill="${p.accent}"/><ellipse cx="50" cy="62" rx="32" ry="29" fill="${p.body}"/>${face}`;
+  }
+  const svg = a => `<svg viewBox="0 0 100 100" aria-hidden="true">${inner(a)}</svg>`;
+
+  let animal='cat';
+  const pet=document.getElementById('pet'), popup=document.getElementById('popup');
+  function renderPet(){ pet.innerHTML=svg(animal); }
+  renderPet();
+  document.querySelectorAll('.frame .mini').forEach(m=>{ m.innerHTML=svg(m.parentElement.dataset.animal); });
+
+  // heart comfort meter
+  function heart(pct){
+    const f = Math.max(0,Math.min(100,pct));
+    document.getElementById('heart').innerHTML =
+      `<svg viewBox="0 0 32 29"><defs><clipPath id="cl"><rect x="0" y="${29-29*f/100}" width="32" height="${29*f/100}"/></clipPath></defs>
+       <path d="M16 28 C3 18 1 10 6 5 C10 1 15 3 16 7 C17 3 22 1 26 5 C31 10 29 18 16 28Z" fill="#f0e0d6"/>
+       <path d="M16 28 C3 18 1 10 6 5 C10 1 15 3 16 7 C17 3 22 1 26 5 C31 10 29 18 16 28Z" fill="#f1a28c" clip-path="url(#cl)"/></svg>`;
+  }
+  heart(72);
+
+  // --- fill the bowl (= "I drank water") ---
+  let waters=3;
+  const water=document.getElementById('water');
+  document.getElementById('bowl').addEventListener('click',()=>{
+    document.getElementById('ripple').classList.remove('go'); void document.getElementById('ripple').offsetWidth;
+    document.getElementById('ripple').classList.add('go');
+    document.getElementById('drop').classList.remove('go'); void document.getElementById('drop').offsetWidth;
+    document.getElementById('drop').classList.add('go');
+    water.setAttribute('rx','18'); setTimeout(()=>water.setAttribute('rx','16'),650);
+    pet.classList.remove('tip'); void pet.offsetWidth; pet.classList.add('tip');
+    waters++; document.getElementById('tWater').textContent=waters;
+    heart(Math.min(100,72+ (waters-3)*5));
+    document.getElementById('mood').textContent='happy and hydrated';
+  });
+
+  // --- pet the pet ---
+  let pets=2;
+  pet.addEventListener('click',()=>{
+    pet.classList.remove('pop'); void pet.offsetWidth; pet.classList.add('pop');
+    pets++; document.getElementById('tPets').textContent=pets;
+  });
+
+  // --- good night / good morning ---
+  let night=false;
+  document.getElementById('bed').addEventListener('click',()=>{
+    night=!night; popup.classList.toggle('night',night);
+    pet.querySelector('.eyes-open').style.display = night?'none':'block';
+    pet.querySelector('.eyes-shut').style.display = night?'block':'none';
+    document.getElementById('bedcap').textContent = night?'good morning':'good night';
+    document.getElementById('mood').textContent = night?'fast asleep · sweet dreams 🌙':'content and cozy';
+  });
+
+  // --- switch resident ---
+  document.getElementById('residents').addEventListener('click',e=>{
+    const b=e.target.closest('.frame'); if(!b)return;
+    document.querySelectorAll('.frame').forEach(f=>f.classList.remove('is-home'));
+    b.classList.add('is-home'); animal=b.dataset.animal; renderPet();
+    document.getElementById('petName').textContent = {cat:'Pip',dog:'Biscuit',bunny:'Clover'}[animal];
+    pet.setAttribute('aria-label','Pet '+document.getElementById('petName').textContent);
+  });
+
+  // --- settings drawer ---
+  document.getElementById('gear').addEventListener('click',()=>popup.classList.toggle('open'));
+  document.getElementById('interval').addEventListener('input',e=>document.getElementById('ivLabel').textContent=e.target.value);
+</script>
+</body>
+</html>

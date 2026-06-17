@@ -151,20 +151,22 @@ export function applyPet(state: PetState, now: number): PetState {
   }
 }
 
-/** Apply a chrome.idle state change; credit a "break" when returning from rest. */
+/**
+ * Apply a chrome.idle state change; credit a "break" when returning from rest.
+ * Break length is measured from `lastActiveAt` (the moment activity last changed),
+ * NOT `lastTickAt` — the 5-minute tick keeps resetting lastTickAt, which used to
+ * make long breaks look short and undercount them. `lastActiveAt` is updated on
+ * every transition, so on idle→active it holds the instant the rest began.
+ */
 export function applyActivity(state: PetState, now: number, activity: ActivityState): PetState {
   const wasResting = isResting(state)
-  const restedMs = now - state.lastTickAt
+  const restedMs = now - state.lastActiveAt
   const s = applyTick(state, now)
   let todaysWins = s.todaysWins
-  let lastActiveAt = s.lastActiveAt
-  if (activity === 'active') {
-    if (wasResting && restedMs >= BREAK_MIN_MS) {
-      todaysWins = { ...todaysWins, breaks: todaysWins.breaks + 1 }
-    }
-    lastActiveAt = now
+  if (activity === 'active' && wasResting && restedMs >= BREAK_MIN_MS) {
+    todaysWins = { ...todaysWins, breaks: todaysWins.breaks + 1 }
   }
-  return { ...s, activityState: activity, lastActiveAt, todaysWins }
+  return { ...s, activityState: activity, lastActiveAt: now, todaysWins }
 }
 
 /** Toggle manual "good night" sleep; schedules an auto-wake for the morning. */
@@ -214,8 +216,11 @@ export function reminderDue(state: PetState, now: number): boolean {
 
   const intervalMs = state.reminderIntervalMin * MINUTE
   // Anchor off the most recent of "last drank" / "last reminded"; drinking resets it.
+  // For a user who has never done either, anchor on install time — NOT lastTickAt,
+  // which the 5-minute tick keeps resetting (that bug meant the first reminder never
+  // fired for someone who'd never logged water).
   const anchor = Math.max(state.lastWaterAt ?? 0, state.lastReminderAt ?? 0)
-  if (anchor === 0) return now - state.lastTickAt >= intervalMs
+  if (anchor === 0) return now - state.installedAt >= intervalMs
   return now - anchor >= intervalMs
 }
 

@@ -11,6 +11,7 @@ export const ANIMAL_LABELS: Record<Animal, string> = {
   dog: 'Dog',
   bunny: 'Bunny',
 }
+const CORNERS = ['tl', 'tr', 'bl', 'br'] as const
 
 // ---- wellbeing tuning (all gentle + forgiving by construction) ----
 export const WELLBEING_FLOOR = 30 // hard floor; the pet never drops into distress
@@ -44,6 +45,7 @@ export function defaultState(now: number): PetState {
     lastReminderAt: null,
     snoozeUntil: null,
     lastNudgeAt: null,
+    installedAt: now,
     lastTickAt: now,
     todaysWins: { date: todayKey(now), water: 0, breaks: 0, pets: 0 },
     history: [],
@@ -66,6 +68,19 @@ export function migrate(raw: unknown, now: number): PetState {
   merged.todaysWins = { ...base.todaysWins, ...(incoming.todaysWins ?? {}) }
   merged.waterLog = Array.isArray(incoming.waterLog) ? incoming.waterLog : base.waterLog
   merged.history = Array.isArray(incoming.history) ? incoming.history : base.history
+
+  // Validate enum-ish fields so a corrupt stored object can't poison the UI.
+  if (!ANIMALS.includes(merged.animal)) merged.animal = base.animal
+  if (!CORNERS.includes(merged.position.corner)) merged.position = base.position
+
+  // installedAt: prefer the stored value, else an existing user's lastTickAt, else now.
+  merged.installedAt =
+    typeof incoming.installedAt === 'number'
+      ? incoming.installedAt
+      : typeof incoming.lastTickAt === 'number'
+        ? incoming.lastTickAt
+        : base.installedAt
+
   merged.schemaVersion = SCHEMA_VERSION
   return merged
 }

@@ -83,6 +83,9 @@ export interface PetState {
   lastNudgeAt: number | null
 
   // --- bookkeeping ---
+  /** epoch ms of first install; the baseline for the very first reminder, before
+   *  the user has ever logged water or been reminded. */
+  installedAt: number
   /** epoch ms anchor for time-based wellbeing decay (survives service-worker death). */
   lastTickAt: number
   todaysWins: TodaysWins

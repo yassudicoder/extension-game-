@@ -13,7 +13,7 @@ import {
   petMood,
   describeWellbeing,
 } from './wellbeing'
-import { defaultState, WELLBEING_FLOOR, WELLBEING_MAX } from './schema'
+import { defaultState, migrate, WELLBEING_FLOOR, WELLBEING_MAX } from './schema'
 import { HOUR, MINUTE, DAY, nextMorning } from './time'
 
 const T0 = new Date('2026-06-17T09:00:00').getTime() // a fixed, deterministic "now"
@@ -111,6 +111,16 @@ describe('rest & activity', () => {
     s = applyActivity(s, T0 + 30_000, 'active') // only 30s
     expect(s.todaysWins.breaks).toBe(0)
   })
+
+  it('measures break length from lastActiveAt, not the 5-min tick (long breaks count)', () => {
+    let s = defaultState(T0)
+    s = applyActivity(s, T0, 'idle') // step away
+    // the periodic tick keeps firing while idle — this must NOT shorten the break
+    s = applyTick(s, T0 + 20 * MINUTE)
+    s = applyTick(s, T0 + 40 * MINUTE)
+    s = applyActivity(s, T0 + 45 * MINUTE, 'active') // back after 45 min
+    expect(s.todaysWins.breaks).toBe(1)
+  })
 })
 
 describe('sleep mode', () => {
@@ -154,6 +164,31 @@ describe('reminders', () => {
     expect(s.reminderIntervalMin).toBeGreaterThanOrEqual(30)
     s = applyReminderSettings(s, T0, 9999, true) // above maximum
     expect(s.reminderIntervalMin).toBeLessThanOrEqual(240)
+  })
+
+  it('fires for a fresh user who has never logged water (anchored on install)', () => {
+    const s = defaultState(T0) // active, reminders on, no water, no prior reminder
+    expect(reminderDue(s, T0 + 60 * MINUTE)).toBe(false)
+    expect(reminderDue(s, T0 + 91 * MINUTE)).toBe(true)
+  })
+})
+
+describe('migrate validates stored data', () => {
+  it('falls back to defaults for a corrupt animal / corner', () => {
+    const fixed = migrate({ animal: 'dragon', position: { corner: 'xx', dx: 5, dy: 5 } }, T0)
+    expect(fixed.animal).toBe('cat')
+    expect(fixed.position.corner).toBe('br')
+  })
+
+  it('keeps valid stored values', () => {
+    const ok = migrate({ animal: 'bunny', position: { corner: 'tl', dx: 10, dy: 12 } }, T0)
+    expect(ok.animal).toBe('bunny')
+    expect(ok.position).toEqual({ corner: 'tl', dx: 10, dy: 12 })
+  })
+
+  it('seeds installedAt from an existing user’s lastTickAt', () => {
+    const migrated = migrate({ lastTickAt: T0 - 5 * DAY }, T0)
+    expect(migrated.installedAt).toBe(T0 - 5 * DAY)
   })
 })
 

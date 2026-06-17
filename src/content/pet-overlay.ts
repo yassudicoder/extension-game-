@@ -15,6 +15,13 @@ function applyHidden(host: HTMLElement, hidden: boolean): void {
   host.style.display = hidden ? 'none' : 'block'
 }
 
+/** Keep an anchored position on-screen for the current viewport size. */
+function clampPosition(pos: PetPosition): PetPosition {
+  const maxX = Math.max(MARGIN, window.innerWidth - PET_SIZE - MARGIN)
+  const maxY = Math.max(MARGIN, window.innerHeight - PET_SIZE - MARGIN)
+  return { ...pos, dx: Math.min(pos.dx, maxX), dy: Math.min(pos.dy, maxY) }
+}
+
 function applyPosition(petEl: HTMLElement, pos: PetPosition): void {
   for (const side of ['left', 'right', 'top', 'bottom']) petEl.style.removeProperty(side)
   const horiz = pos.corner.endsWith('r') ? 'right' : 'left'
@@ -49,8 +56,11 @@ export async function mountPet(): Promise<void> {
   // resets keep the host from being affected by — or affecting — the page layout.
   const host = document.createElement('div')
   host.id = HOST_ID
+  // display:block is set explicitly: the shadow CSS uses `:host { all: initial }`,
+  // which resets display to `inline` — without this the overlay's box behaviour
+  // would depend on load order.
   host.style.cssText =
-    'position:fixed;inset:0;margin:0;padding:0;border:0;background:none;pointer-events:none;z-index:2147483647;'
+    'display:block;position:fixed;inset:0;margin:0;padding:0;border:0;background:none;pointer-events:none;z-index:2147483647;'
   document.documentElement.appendChild(host)
 
   const root = host.attachShadow({ mode: 'open' })
@@ -106,6 +116,11 @@ export async function mountPet(): Promise<void> {
     ) {
       animator.playNudge()
     }
+  })
+
+  // Keep the pet on-screen if the viewport shrinks (visual only; not persisted).
+  window.addEventListener('resize', () => {
+    if (!state.hidden) applyPosition(petEl, clampPosition(state.position))
   })
 
   // ---- drag-to-reposition vs. click-to-pet ----
