@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en" data-time="day">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pocket Pet — keep a little farm in your browser</title>
+    <meta
+      name="description"
+      content="Pocket Pet is a pixel companion who wanders your tabs and tends a cozy farm — fed by your own good habits. Water, breaks, sleep and petting earn Biscuits. Local-first, no tracking."
+    />
+    <meta name="theme-color" content="#7CA05E" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237CA05E'/%3E%3Ccircle cx='16' cy='17' r='7' fill='%23EFC65A'/%3E%3Cpath d='M16 10c0-3 2-5 5-5 0 3-2 5-5 5z' fill='%23F6EFDD'/%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <a class="wordmark" href="#hero">
+        <svg class="wordmark__mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="13" r="7" fill="var(--wheat)" />
+          <path d="M12 6c0-3 2.4-5 5.5-5C17.5 4 15.1 6 12 6z" fill="var(--meadow)" />
+        </svg>
+        <span>Pocket&nbsp;Pet</span>
+      </a>
+      <a class="btn btn--primary btn--sm" href="#install">Add to Chrome</a>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="hero" aria-label="A cozy farm growing in your browser">
+        <!-- Decorative living diorama. All real copy lives in .hero__content below. -->
+        <div class="scene" aria-hidden="true">
+          <div class="scene__sky"></div>
+
+          <div class="scene__celestial">
+            <div class="sun"></div>
+            <div class="moon"></div>
+          </div>
+
+          <div class="scene__stars">
+            <i style="--x: 14%; --y: 18%; --d: 0s"></i>
+            <i style="--x: 28%; --y: 32%; --d: 0.6s"></i>
+            <i style="--x: 44%; --y: 12%; --d: 1.1s"></i>
+            <i style="--x: 63%; --y: 26%; --d: 0.3s"></i>
+            <i style="--x: 76%; --y: 14%; --d: 0.9s"></i>
+            <i style="--x: 88%; --y: 30%; --d: 1.4s"></i>
+            <i style="--x: 36%; --y: 20%; --d: 1.7s"></i>
+            <i style="--x: 54%; --y: 36%; --d: 2.1s"></i>
+          </div>
+
+          <div class="scene__clouds">
+            <span class="cloud cloud--1"></span>
+            <span class="cloud cloud--2"></span>
+            <span class="cloud cloud--3"></span>
+          </div>
+
+          <!-- string of farm lights, lit at night -->
+          <div class="scene__lights">
+            <span class="bulb" style="--i: 0"></span>
+            <span class="bulb" style="--i: 1"></span>
+            <span class="bulb" style="--i: 2"></span>
+            <span class="bulb" style="--i: 3"></span>
+            <span class="bulb" style="--i: 4"></span>
+          </div>
+
+          <div class="scene__hills"></div>
+
+          <div class="scene__farm">
+            <div class="silo">
+              <span class="silo__cap"></span>
+            </div>
+            <div class="barn">
+              <span class="barn__roof"></span>
+              <span class="barn__wall"></span>
+              <span class="barn__door"></span>
+              <span class="barn__loft"></span>
+            </div>
+          </div>
+
+          <div class="scene__field"></div>
+          <div class="scene__fence"></div>
+
+          <!-- the actual extension pixel pet, animated with the product's CSS-steps -->
+          <div class="pet" data-pet="cat"></div>
+
+          <div class="scene__grass">
+            <span class="blade" style="--x: 8%; --d: 0s"></span>
+            <span class="blade" style="--x: 22%; --d: 0.4s"></span>
+            <span class="blade" style="--x: 39%; --d: 0.9s"></span>
+            <span class="blade" style="--x: 57%; --d: 0.2s"></span>
+            <span class="blade" style="--x: 71%; --d: 0.7s"></span>
+            <span class="blade" style="--x: 85%; --d: 1.2s"></span>
+            <span class="blade" style="--x: 94%; --d: 0.5s"></span>
+          </div>
+        </div>
+
+        <div class="hero__content">
+          <div class="sign">
+            <p class="sign__eyebrow">a browser companion</p>
+            <h1 class="sign__title">Keep a little farm in your browser.</h1>
+            <p class="sign__lead">
+              Pocket Pet is a pixel friend who wanders your tabs and tends a cozy homestead.
+              Drink your water, take your breaks, get some sleep — and watch your companion,
+              and the farm, grow.
+            </p>
+            <div class="sign__actions">
+              <a class="btn btn--primary" id="install" href="#">Add to Chrome — it's free</a>
+              <button class="daynight" type="button" aria-pressed="false" aria-label="Light the lanterns for night">
+                <span class="daynight__track"><span class="daynight__knob"></span></span>
+                <span class="daynight__text">Light the lanterns</span>
+              </button>
+            </div>
+            <p class="sign__micro">Lives on your computer. No account, no tracking, ever.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>Made with care on a small farm. · <a href="#">Privacy</a> · <a href="#">GitHub</a></p>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

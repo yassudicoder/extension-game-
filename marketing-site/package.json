@@ -1,0 +1,16 @@
+{
+  "name": "pocket-pet-site",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Marketing site for the Pocket Pet browser extension — a cozy little farm.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 4321"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11"
+  }
+}

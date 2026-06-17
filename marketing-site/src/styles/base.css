@@ -1,0 +1,156 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+* {
+  margin: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  line-height: 1.65;
+  color: var(--bark);
+  /* meadow is the dominant surface; the hero paints its own sky on top */
+  background: var(--meadow);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: inherit;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+:focus-visible {
+  outline: 3px solid var(--poppy);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -60px;
+  z-index: 100;
+  background: var(--linen);
+  color: var(--bark);
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-weight: 800;
+  box-shadow: var(--shadow-soft);
+  transition: top 0.2s var(--ease);
+}
+.skip-link:focus {
+  top: 12px;
+}
+
+/* ---- header ---- */
+.site-header {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: clamp(14px, 2.4vw, 26px) clamp(16px, 4vw, 48px);
+}
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.3rem;
+  text-decoration: none;
+  color: var(--bark);
+  transition: color 1s var(--ease);
+}
+.wordmark__mark {
+  width: 26px;
+  height: 26px;
+  filter: drop-shadow(0 2px 1px rgba(59, 46, 38, 0.25));
+}
+:root[data-time='night'] .wordmark {
+  color: var(--linen);
+}
+
+/* ---- buttons ---- */
+.btn {
+  --btn-bg: var(--poppy);
+  --btn-ink: var(--linen-soft);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.05rem;
+  line-height: 1;
+  text-decoration: none;
+  padding: 0.85em 1.4em;
+  border: 0;
+  border-radius: 999px;
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+  cursor: pointer;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.3) inset,
+    0 12px 22px -12px rgba(168, 59, 73, 0.8);
+  transition:
+    transform 0.12s var(--ease),
+    box-shadow 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+.btn:hover {
+  transform: translateY(-2px);
+  background: var(--poppy-deep);
+}
+.btn:active {
+  transform: translateY(0);
+}
+.btn--sm {
+  font-size: 0.95rem;
+  padding: 0.6em 1.1em;
+}
+
+/* ---- footer (slim for now; farm-styled in a later phase) ---- */
+.site-footer {
+  background: var(--meadow-deep);
+  color: var(--linen-soft);
+  text-align: center;
+  padding: 28px 16px;
+  font-size: var(--fs-200);
+}
+.site-footer a {
+  color: var(--wheat);
+  text-underline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

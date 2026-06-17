@@ -1,0 +1,91 @@
+/* Self-hosted faces (no CDN) — the extension's own Fredoka + Nunito for cohesion. */
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../assets/fonts/fredoka-latin-500-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../assets/fonts/fredoka-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/fredoka-latin-700-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/nunito-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../assets/fonts/nunito-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/nunito-latin-700-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('../assets/fonts/nunito-latin-800-normal.woff2') format('woff2');
+}
+
+:root {
+  /* palette — green-led, warm */
+  --meadow: #7ca05e;
+  --meadow-deep: #5e7e45;
+  --meadow-shade: #6b8c4e;
+  --wheat: #efc65a;
+  --wheat-deep: #d9a93f;
+  --linen: #f6efdd;
+  --linen-soft: #fbf6ea;
+  --poppy: #c44b5a;
+  --poppy-deep: #a83b49;
+  --sky: #bfe0ea;
+  --sky-high: #e6f2f1;
+  --bark: #3b2e26;
+  --bark-soft: #6b5a4e;
+  --plum: #3a3357;
+  --plum-deep: #2a2540;
+  --lantern: #ffd98a;
+  --barn: #9c5a4a;
+  --barn-roof: #7a4438;
+  --barn-door: #5e3329;
+
+  /* type */
+  --font-display: 'Fredoka', system-ui, sans-serif;
+  --font-body: 'Nunito', system-ui, sans-serif;
+  --fs-200: 0.8rem;
+  --fs-300: 1rem;
+  --fs-400: 1.2rem;
+  --fs-500: 1.5rem;
+  --fs-600: 1.95rem;
+  --fs-700: 2.44rem;
+  --fs-hero: clamp(2.6rem, 1.6rem + 4vw, 4.6rem);
+
+  /* shape + depth */
+  --radius: 16px;
+  --radius-lg: 26px;
+  --shadow-sign: 0 22px 40px -22px rgba(59, 46, 38, 0.5);
+  --shadow-soft: 0 10px 24px -16px rgba(59, 46, 38, 0.45);
+  --ease: cubic-bezier(0.22, 0.9, 0.32, 1);
+}
