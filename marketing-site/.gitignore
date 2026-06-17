@@ -10,3 +10,6 @@ dist/
 # art into dist/ is fine — only the raw source files stay out of git.
 src/assets/scene/*
 !src/assets/scene/README.md
+
+# dev-only tile inspector (references git-ignored pack)
+inspect.html

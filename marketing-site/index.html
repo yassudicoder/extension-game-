@@ -50,50 +50,16 @@
             <i style="--x: 54%; --y: 36%; --d: 2.1s"></i>
           </div>
 
-          <div class="scene__clouds">
-            <span class="cloud cloud--1"></span>
-            <span class="cloud cloud--2"></span>
-            <span class="cloud cloud--3"></span>
+          <!-- pixel farm world — tiles stamped from the Sprout Lands pack in hero.ts -->
+          <div class="world">
+            <div class="ground"></div>
+            <div class="world__bg"></div>
+            <div class="pet" data-pet="cat"></div>
+            <div class="world__fg"></div>
           </div>
 
-          <!-- string of farm lights, lit at night -->
-          <div class="scene__lights">
-            <span class="bulb" style="--i: 0"></span>
-            <span class="bulb" style="--i: 1"></span>
-            <span class="bulb" style="--i: 2"></span>
-            <span class="bulb" style="--i: 3"></span>
-            <span class="bulb" style="--i: 4"></span>
-          </div>
-
-          <div class="scene__hills"></div>
-
-          <div class="scene__farm">
-            <div class="silo">
-              <span class="silo__cap"></span>
-            </div>
-            <div class="barn">
-              <span class="barn__roof"></span>
-              <span class="barn__wall"></span>
-              <span class="barn__door"></span>
-              <span class="barn__loft"></span>
-            </div>
-          </div>
-
-          <div class="scene__field"></div>
-          <div class="scene__fence"></div>
-
-          <!-- the actual extension pixel pet, animated with the product's CSS-steps -->
-          <div class="pet" data-pet="cat"></div>
-
-          <div class="scene__grass">
-            <span class="blade" style="--x: 8%; --d: 0s"></span>
-            <span class="blade" style="--x: 22%; --d: 0.4s"></span>
-            <span class="blade" style="--x: 39%; --d: 0.9s"></span>
-            <span class="blade" style="--x: 57%; --d: 0.2s"></span>
-            <span class="blade" style="--x: 71%; --d: 0.7s"></span>
-            <span class="blade" style="--x: 85%; --d: 1.2s"></span>
-            <span class="blade" style="--x: 94%; --d: 0.5s"></span>
-          </div>
+          <!-- night tint overlay (a warm window glow is added on the house at night) -->
+          <div class="scene__night"></div>
         </div>
 
         <div class="hero__content">
@@ -120,6 +86,11 @@
 
     <footer class="site-footer">
       <p>Made with care on a small farm. · <a href="#">Privacy</a> · <a href="#">GitHub</a></p>
+      <p class="credit">
+        Farm pixel art:
+        <a href="https://cupnooble.itch.io/sprout-lands-asset-pack" rel="noopener">Sprout Lands</a>
+        by Cup Nooble.
+      </p>
     </footer>
 
     <script type="module" src="/src/main.ts"></script>
