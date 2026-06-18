@@ -9,6 +9,9 @@ import fences from '../assets/scene/Tilesets/Fences.png'
 import doors from '../assets/scene/Tilesets/Doors.png'
 import walls from '../assets/scene/Tilesets/Wooden_House_Walls_Tilset.png'
 import roof from '../assets/scene/Tilesets/Wooden_House_Roof_Tilset.png'
+import water from '../assets/scene/Tilesets/Water.png'
+import tilled from '../assets/scene/Tilesets/Tilled_Dirt.png'
+import paths from '../assets/scene/Objects/Paths.png'
 import biom from '../assets/scene/Objects/Basic_Grass_Biom_things.png'
 import coop from '../assets/scene/Objects/Free_Chicken_House.png'
 import furniture from '../assets/scene/Objects/Basic_Furniture.png'
@@ -41,6 +44,9 @@ const F = mk(fences, 64, 64)
 const D = mk(doors, 16, 64)
 const WL = mk(walls, 80, 48)
 const RF = mk(roof, 112, 80)
+const WA = mk(water, 64, 16)
+const TD = mk(tilled, 176, 112)
+const PA = mk(paths, 64, 64)
 const B = mk(biom, 144, 80)
 const C = mk(coop, 48, 48)
 const FU = mk(furniture, 144, 96)
@@ -68,6 +74,11 @@ export const TILES = {
   wallBot: WL(1, 2, 2, 1), // wall base
   door: D(0, 2, 1, 2), //   door (1×2)
   coop: C(0, 0, 3, 3), //   complete 3×3 coop building (used as the hero homestead)
+
+  // --- terrain for the reworked hero (pond, crop rows, path) ---
+  water: WA(0, 0), //   animated pond water (frame 0 of a 4-frame strip)
+  soil: TD(1, 1), //    tilled-dirt center tile (crop rows)
+  path: PA(1, 1), //    dirt path center tile
 
   // --- market items (cut from the Objects/Characters sheets) ---
   apple: B(2, 2),

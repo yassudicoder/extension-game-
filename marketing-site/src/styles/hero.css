@@ -133,6 +133,376 @@
   image-rendering: pixelated;
 }
 
+/* far horizon — slowest parallax, sits at the sky/ground seam */
+.world__far {
+  inset: 0;
+  z-index: 0;
+  transform: translateX(calc(var(--mx, 0) * 2px));
+  transition: transform 0.45s var(--ease);
+}
+/* rolling hills, painted in the meadow palette behind the treeline */
+.world__far::before {
+  content: '';
+  position: absolute;
+  left: -6%;
+  right: -6%;
+  bottom: 34%;
+  height: 22%;
+  background:
+    radial-gradient(60% 150% at 18% 100%, var(--meadow-shade) 0 60%, transparent 61%),
+    radial-gradient(54% 140% at 52% 100%, var(--meadow) 0 60%, transparent 61%),
+    radial-gradient(64% 150% at 86% 100%, var(--meadow-shade) 0 60%, transparent 61%);
+  filter: saturate(0.92) brightness(0.96);
+  transition: filter 1.2s var(--ease);
+}
+.world__far > * {
+  position: absolute;
+  image-rendering: pixelated;
+}
+/* mid field band — between the buildings and the foreground fence */
+.world__mid {
+  inset: 0;
+  z-index: 2;
+  transform: translateX(calc(var(--mx, 0) * 10px));
+  transition: transform 0.45s var(--ease);
+}
+.world__mid > * {
+  position: absolute;
+  image-rendering: pixelated;
+}
+
+/* ---- composed homestead building (barn / farmhouse) ---- */
+.bld {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  filter: drop-shadow(0 9px 6px rgba(59, 46, 38, 0.3));
+}
+.bld > * {
+  image-rendering: pixelated;
+}
+.bld__door {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+}
+.bld__glow {
+  position: absolute;
+  border-radius: 3px;
+  background: var(--lantern);
+  opacity: 0;
+  box-shadow: 0 0 16px 6px rgba(255, 217, 138, 0.8);
+  transition: opacity 1s var(--ease);
+  image-rendering: auto;
+}
+:root[data-time='night'] .bld__glow {
+  opacity: 0.95;
+}
+
+/* ---- windmill: a wooden tower with slowly turning sails (CSS, on-palette) ---- */
+.windmill {
+  width: 60px;
+  height: 150px;
+}
+.windmill__post {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 34px;
+  height: 104px;
+  background: linear-gradient(90deg, var(--oak-mid) 0 6px, var(--oak) 6px 12px, var(--oak-mid) 12px 18px, var(--oak) 18px 28px, var(--oak-deep) 28px 34px);
+  border: 3px solid var(--oak-deep);
+  box-shadow: inset 0 4px 0 rgba(255, 244, 214, 0.22);
+}
+.windmill__post::before {
+  /* a little capped roof */
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: -16px;
+  border-left: 22px solid transparent;
+  border-right: 22px solid transparent;
+  border-bottom: 18px solid var(--barn-roof);
+}
+.windmill__hub {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: var(--oak-deep);
+  z-index: 3;
+}
+.windmill__blades {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+  animation: windmill-spin 9s linear infinite;
+}
+.windmill__blades i {
+  position: absolute;
+  width: 12px;
+  height: 50px;
+  margin: 0 0 0 -6px;
+  transform-origin: 50% 0;
+  background: linear-gradient(180deg, var(--linen) 0 60%, var(--oak) 60% 100%);
+  border: 2px solid var(--oak-deep);
+}
+.windmill__blades i:nth-child(1) {
+  transform: rotate(0deg);
+}
+.windmill__blades i:nth-child(2) {
+  transform: rotate(90deg);
+}
+.windmill__blades i:nth-child(3) {
+  transform: rotate(180deg);
+}
+.windmill__blades i:nth-child(4) {
+  transform: rotate(270deg);
+}
+@keyframes windmill-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- the pond ---- */
+.pond {
+  width: 168px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #cdeaf1 0 38%, #8fc1d8 38% 70%, #6aa6c4 70% 100%);
+  box-shadow:
+    inset 0 5px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -7px 0 rgba(40, 80, 105, 0.28),
+    0 4px 6px -3px rgba(59, 46, 38, 0.3);
+  overflow: hidden;
+}
+.pond::after {
+  /* a drifting glint of light on the water */
+  content: '';
+  position: absolute;
+  top: 30%;
+  left: -30%;
+  width: 36%;
+  height: 10%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  animation: pond-glint 6s ease-in-out infinite;
+}
+@keyframes pond-glint {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translateX(360%);
+    opacity: 0.7;
+  }
+}
+
+/* ---- market stall ---- */
+.stall {
+  width: 104px;
+  height: 86px;
+}
+.stall__awning {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 26px;
+  background: repeating-linear-gradient(90deg, var(--poppy) 0 13px, var(--linen-soft) 13px 26px);
+  border: 2px solid var(--poppy-deep);
+  border-radius: 4px 4px 0 0;
+}
+.stall__awning::after {
+  /* scalloped lower edge */
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -7px;
+  height: 8px;
+  background: repeating-linear-gradient(90deg, var(--poppy) 0 13px, var(--linen-soft) 13px 26px);
+  -webkit-mask: radial-gradient(8px 8px at 13px -2px, transparent 7px, #000 8px) repeat-x 0 0 / 26px 8px;
+  mask: radial-gradient(8px 8px at 13px -2px, transparent 7px, #000 8px) repeat-x 0 0 / 26px 8px;
+}
+.stall__counter {
+  position: absolute;
+  bottom: 0;
+  left: 6px;
+  right: 6px;
+  height: 26px;
+  background: linear-gradient(180deg, var(--oak), var(--oak-deep));
+  border: 2px solid var(--oak-deep);
+  box-shadow: inset 0 3px 0 rgba(255, 244, 214, 0.25);
+}
+.stall__post {
+  position: absolute;
+  bottom: 0;
+  width: 6px;
+  height: 64px;
+  background: var(--oak-deep);
+}
+.stall__post--l {
+  left: 4px;
+}
+.stall__post--r {
+  right: 4px;
+}
+
+/* ---- scarecrow ---- */
+.scarecrow {
+  width: 44px;
+  height: 96px;
+}
+.scarecrow__pole {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 6px;
+  height: 96px;
+  margin-left: -3px;
+  background: var(--oak-deep);
+}
+.scarecrow__cross {
+  position: absolute;
+  left: 50%;
+  top: 28px;
+  width: 44px;
+  height: 6px;
+  margin-left: -22px;
+  background: var(--oak-mid);
+}
+.scarecrow__head {
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  width: 22px;
+  height: 22px;
+  margin-left: -11px;
+  border-radius: 4px;
+  background: radial-gradient(circle at 40% 38%, #f3e2a8, var(--wheat) 70%, var(--wheat-deep));
+  box-shadow: inset -3px -3px 0 rgba(180, 140, 40, 0.25);
+}
+.scarecrow__hat {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 30px;
+  height: 0;
+  margin-left: -15px;
+  border-left: 15px solid transparent;
+  border-right: 15px solid transparent;
+  border-bottom: 11px solid var(--barn);
+}
+.scarecrow__body {
+  position: absolute;
+  left: 50%;
+  top: 28px;
+  width: 30px;
+  height: 30px;
+  margin-left: -15px;
+  background: var(--poppy);
+  border-radius: 4px;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.12);
+}
+
+/* ---- a hand-painted wooden signpost ---- */
+.signpost {
+  width: 96px;
+  height: 70px;
+  font-family: var(--font-display);
+}
+.signpost__pole {
+  position: absolute;
+  left: 14px;
+  bottom: 0;
+  width: 7px;
+  height: 70px;
+  background: linear-gradient(90deg, var(--oak-deep), var(--oak-mid));
+}
+.signpost__board {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 96px;
+  padding: 5px 6px;
+  background: linear-gradient(180deg, var(--linen-soft), var(--linen));
+  border: 3px solid var(--barn-roof);
+  border-radius: 4px;
+  box-shadow: 0 3px 0 var(--barn-door);
+  transform: rotate(-3deg);
+  color: var(--bark);
+  font-weight: 600;
+  font-size: 10px;
+  line-height: 1.1;
+  text-align: center;
+  image-rendering: auto;
+}
+
+/* ---- hanging lanterns (dark by day, warm at night) ---- */
+.lantern {
+  width: 16px;
+  height: 26px;
+}
+.lantern__cord {
+  position: absolute;
+  left: 50%;
+  top: -40px;
+  width: 2px;
+  height: 40px;
+  margin-left: -1px;
+  background: rgba(59, 46, 38, 0.5);
+}
+.lantern__body {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 16px;
+  height: 22px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--oak-mid), var(--oak-deep));
+  border: 2px solid var(--bark);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.15);
+  transition:
+    background 1s var(--ease),
+    box-shadow 1s var(--ease);
+}
+:root[data-time='night'] .lantern__body {
+  background: radial-gradient(circle at 50% 45%, #fff3c8, var(--lantern) 60%, var(--wheat-deep));
+  box-shadow:
+    0 0 14px 5px rgba(255, 217, 138, 0.7),
+    inset 0 0 0 2px rgba(120, 80, 30, 0.3);
+}
+
+/* crop-row soil strip */
+.crop-row {
+  position: absolute;
+  image-rendering: pixelated;
+}
+
+/* ---- night transforms for the whole world ---- */
+:root[data-time='night'] .world__far::before {
+  filter: saturate(0.7) brightness(0.5);
+}
+:root[data-time='night'] .pond {
+  background: linear-gradient(180deg, #6f86b0 0 38%, #3f5681 38% 70%, #2f4368 70% 100%);
+  box-shadow:
+    inset 0 5px 0 rgba(220, 230, 255, 0.18),
+    inset 0 -7px 0 rgba(10, 20, 45, 0.4);
+}
+
 /* the composed house: stacked tile rows */
 .house {
   position: absolute;
@@ -193,6 +563,52 @@
 /* livestock share the pet's crisp pixel scaling */
 .critter {
   image-rendering: pixelated;
+}
+
+/* ---- drag: pick up an animal ---- */
+/* A held animal is reparented here so it rides above the sign + night tint.
+   Shares the hero box (inset:0) so the move keeps its anchor — no jump. */
+.world__hold {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+.world__hold > * {
+  position: absolute;
+}
+.pet,
+.critter {
+  touch-action: pan-y; /* let vertical scroll start on a sprite; we grab on a deliberate drag */
+}
+.is-grabbed {
+  cursor: grabbing;
+  pointer-events: auto;
+}
+/* a soft dust puff where an animal lands after a drop */
+.pp-dust {
+  position: absolute;
+  width: 11px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(120, 96, 70, 0.5);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 11;
+  animation: pp-dust 440ms ease-out forwards;
+}
+@keyframes pp-dust {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  30% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx, 0px)), -120%) scale(1.4);
+  }
 }
 
 /* ---- ambient magic: warm pollen motes drift by day, fireflies glow at night ---- */

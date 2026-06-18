@@ -43,8 +43,8 @@ h2,
 h3 {
   font-family: var(--font-display);
   font-weight: 600;
-  line-height: 1.05;
-  letter-spacing: -0.01em;
+  line-height: 1.08; /* a touch looser — the pixel face stacks tall */
+  letter-spacing: 0.005em; /* neutral tracking; negative crowds a pixel face */
 }
 
 a {

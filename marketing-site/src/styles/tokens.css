@@ -1,4 +1,34 @@
-/* Self-hosted faces (no CDN) — the extension's own Fredoka + Nunito for cohesion. */
+/* Self-hosted faces (no CDN). Display is now Pixelify Sans — a pixel face that
+   matches the pixel pets; body stays Nunito for legible long-form copy. Fredoka is
+   retained only as a fallback in the stack. */
+@font-face {
+  font-family: 'Pixelify Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/pixelify-sans-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Pixelify Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../assets/fonts/pixelify-sans-latin-500-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Pixelify Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../assets/fonts/pixelify-sans-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Pixelify Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/pixelify-sans-latin-700-normal.woff2') format('woff2');
+}
 @font-face {
   font-family: 'Fredoka';
   font-style: normal;
@@ -76,8 +106,8 @@
   --oak-deep: #6f4a28;
   --oak-grain: #8a5e34;
 
-  /* type */
-  --font-display: 'Fredoka', system-ui, sans-serif;
+  /* type — Pixelify Sans (pixel display) over Nunito (legible body) */
+  --font-display: 'Pixelify Sans', 'Fredoka', system-ui, sans-serif;
   --font-body: 'Nunito', system-ui, sans-serif;
   --fs-200: 0.8rem;
   --fs-300: 1rem;
