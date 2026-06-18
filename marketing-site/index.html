@@ -25,7 +25,14 @@
         </svg>
         <span>Pocket&nbsp;Pet</span>
       </a>
-      <a class="btn btn--primary btn--sm" href="#install">Add to Chrome</a>
+      <a class="btn btn--primary btn--sm" href="https://chromewebstore.google.com/" target="_blank" rel="noopener">
+        <svg class="btn__glyph" viewBox="0 0 48 48" width="16" height="16" aria-hidden="true" focusable="false">
+          <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" stroke-width="4" />
+          <circle cx="24" cy="24" r="7.5" fill="none" stroke="currentColor" stroke-width="4" />
+          <path d="M24 4v13M41 14 30 20.5M7 14l11 6.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+        </svg>
+        Add to Chrome
+      </a>
     </header>
 
     <main id="main">
@@ -73,7 +80,14 @@
               and the farm, grow.
             </p>
             <div class="sign__actions">
-              <a class="btn btn--primary" id="install" href="#">Add to Chrome — it's free</a>
+              <a class="btn btn--primary" id="install" href="https://chromewebstore.google.com/" target="_blank" rel="noopener">
+                <svg class="btn__glyph" viewBox="0 0 48 48" width="18" height="18" aria-hidden="true" focusable="false">
+                  <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" stroke-width="4" />
+                  <circle cx="24" cy="24" r="7.5" fill="none" stroke="currentColor" stroke-width="4" />
+                  <path d="M24 4v13M41 14 30 20.5M7 14l11 6.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+                </svg>
+                Add to Chrome — it's free
+              </a>
               <button class="daynight" type="button" aria-pressed="false" aria-label="Light the lanterns for night">
                 <span class="daynight__track"><span class="daynight__knob"></span></span>
                 <span class="daynight__text">Light the lanterns</span>
@@ -128,17 +142,19 @@
             yourself, and you look after the farm.
           </p>
           <div class="loop">
-            <div class="habit" tabindex="0" data-note="— Pip: a full bowl means a better nap later.">
-              <span class="habit__i" aria-hidden="true">💧</span>drink water
-            </div>
-            <div class="habit" tabindex="0" data-note="— Pip: stretch with me? I’m very good at it.">
-              <span class="habit__i" aria-hidden="true">🌿</span>take a break
-            </div>
-            <div class="habit" tabindex="0" data-note="— Pip: naps are research. I do a lot of research.">
-              <span class="habit__i" aria-hidden="true">🌙</span>sleep well
-            </div>
-            <div class="habit" tabindex="0" data-note="— Pip: ahh, right there. *purrs in Biscuits.*">
-              <span class="habit__i" aria-hidden="true">💛</span>pet your friend
+            <div class="loop__inputs">
+              <div class="habit" tabindex="0" data-note="— Pip: a full bowl means a better nap later.">
+                <span class="habit__i" aria-hidden="true">💧</span>drink water
+              </div>
+              <div class="habit" tabindex="0" data-note="— Pip: stretch with me? I’m very good at it.">
+                <span class="habit__i" aria-hidden="true">🌿</span>take a break
+              </div>
+              <div class="habit" tabindex="0" data-note="— Pip: naps are research. I do a lot of research.">
+                <span class="habit__i" aria-hidden="true">🌙</span>sleep well
+              </div>
+              <div class="habit" tabindex="0" data-note="— Pip: ahh, right there. *purrs in Biscuits.*">
+                <span class="habit__i" aria-hidden="true">💛</span>pet your friend
+              </div>
             </div>
             <div class="loop__arrow" aria-hidden="true">→</div>
             <div class="habit habit--earn"><span class="coin" aria-hidden="true"></span>earn Biscuits</div>
@@ -184,12 +200,20 @@
         <div class="wrap trust">
           <p class="kicker">yours alone</p>
           <h2>Lives on your computer. Full stop.</h2>
-          <div class="notices">
-            <p class="notice">No account — we never asked your name.</p>
-            <p class="notice">No tracking — nobody’s watching the farm but you.</p>
-            <p class="notice">No servers — it all stays on your own machine.</p>
-          </div>
-          <a class="btn btn--primary btn--lg" href="#">Add to Chrome — it’s free</a>
+          <p class="section-lead">No account, no servers, no one watching the farm but you.</p>
+          <a class="btn btn--primary btn--lg btn--cta" href="https://chromewebstore.google.com/" target="_blank" rel="noopener">
+            <svg class="btn__glyph" viewBox="0 0 48 48" width="20" height="20" aria-hidden="true" focusable="false">
+              <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" stroke-width="4" />
+              <circle cx="24" cy="24" r="7.5" fill="none" stroke="currentColor" stroke-width="4" />
+              <path d="M24 4v13M41 14 30 20.5M7 14l11 6.5" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+            </svg>
+            Add to Chrome — it’s free
+          </a>
+          <ul class="trustbar" aria-label="Privacy at a glance">
+            <li><span class="trustbar__i px-lock" aria-hidden="true"></span>No account</li>
+            <li><span class="trustbar__i px-eye" aria-hidden="true"></span>No tracking</li>
+            <li><span class="trustbar__i px-home" aria-hidden="true"></span>Stays on your machine</li>
+          </ul>
           <p class="fineprint">Free · open about its data · uninstall anytime, no hard feelings.</p>
         </div>
       </section>
@@ -203,7 +227,9 @@
       <p class="credit">
         Farm pixel art:
         <a href="https://cupnooble.itch.io/sprout-lands-asset-pack" rel="noopener">Sprout Lands</a>
-        by Cup Nooble · animated animals from the PixelFarmDEMO pack.
+        by Cup Nooble · animals from
+        <a href="https://pixelsbyskab.itch.io/pixel-farm-demo" rel="noopener">Pixel Farm Demo</a>
+        by Pixels by Skab.
       </p>
     </footer>
 

@@ -14,3 +14,12 @@ export function daypart(now: Date = new Date()): Daypart {
   if (h < 20) return { time: 'day', greeting: 'Evening — lanterns soon.', signoff: 'this evening' }
   return { time: 'night', greeting: 'Evening. The lanterns are lit.', signoff: 'tonight' }
 }
+
+/** Which season it is on the visitor's clock — drives the §5 "now" badge. */
+export function season(now: Date = new Date()): 'Spring' | 'Summer' | 'Autumn' | 'Winter' {
+  const m = now.getMonth() // 0 = Jan
+  if (m <= 1 || m === 11) return 'Winter'
+  if (m <= 4) return 'Spring'
+  if (m <= 7) return 'Summer'
+  return 'Autumn'
+}

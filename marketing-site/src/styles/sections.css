@@ -16,7 +16,7 @@
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: lowercase;
-  color: var(--poppy);
+  color: var(--poppy-deep); /* AA-legible on the warm seasonal/market washes */
   font-size: var(--fs-200);
   margin-bottom: 10px;
 }
@@ -52,7 +52,7 @@
   background: linear-gradient(180deg, #f6e2b4, #efd9b0);
 }
 .section--market {
-  background: linear-gradient(180deg, #e8d3ad, #d9bd8f);
+  background: linear-gradient(180deg, #efe1c5, #d9bd8f);
 }
 .section--trust {
   background: linear-gradient(180deg, var(--plum), var(--plum-deep));
@@ -481,6 +481,389 @@
   }
   .coin--flip,
   .card:hover .price .coin {
+    animation: none;
+  }
+}
+
+/* ============================================================================
+   v3 — one focal farm animal per section (calmer as you scroll) + tighter UI/UX.
+   ============================================================================ */
+
+/* shared scroll-reveal entrance (JS adds .reveal then .is-in when in view) */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.5s var(--ease),
+    transform 0.5s var(--ease);
+  transition-delay: calc(var(--i, 0) * 70ms);
+}
+.reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* consistent kicker -> h2 -> lead rhythm + a little colored tick on each kicker */
+.section h2 {
+  margin-top: var(--space-2);
+}
+.section-lead {
+  margin-top: var(--space-3);
+}
+.kicker::before {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 8px;
+  margin-right: 8px;
+  vertical-align: middle;
+  border-radius: 2px;
+  background: var(--poppy);
+}
+.section--trust .kicker::before {
+  background: var(--lantern);
+}
+.residents-row,
+.loop,
+.season-strip,
+.market {
+  margin-top: var(--space-6);
+}
+
+/* critters placed into sections never eat clicks; some hide on small phones */
+.sx-critter {
+  pointer-events: none;
+}
+@media (max-width: 620px) {
+  .sx-critter[data-hide='m'] {
+    display: none;
+  }
+  .pp-zzz {
+    display: none; /* the sleeping cat hides on phones, so do its Zzz */
+  }
+}
+
+/* §2 residents — ground shadow under each pet, trait pill, market-parity hover */
+.resident__art {
+  position: relative;
+}
+.resident__art::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 58px;
+  height: 12px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(59, 46, 38, 0.22), transparent 70%);
+}
+.resident {
+  transition:
+    transform 0.12s var(--ease),
+    box-shadow 0.12s var(--ease);
+}
+.resident:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 0 0 2px var(--barn-roof),
+    var(--shadow-soft);
+}
+.resident .trait {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wheat) 24%, transparent);
+}
+
+/* §3 grows — taller art box (cow + crops + coop), one shared soil baseline */
+.split__art {
+  min-height: clamp(280px, 34vw, 360px);
+}
+.split__art::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 13%;
+  background: linear-gradient(180deg, var(--meadow-shade), var(--meadow-deep));
+  z-index: 0;
+}
+.split__art > * {
+  z-index: 1; /* props stand on the soil band */
+}
+.grow-strip {
+  background-position-x: 0;
+}
+.grow-strip.grown {
+  animation: grow-strip 1.2s steps(var(--grow-steps, 3)) forwards;
+  animation-delay: calc(var(--i, 0) * 150ms);
+}
+@keyframes grow-strip {
+  to {
+    background-position-x: var(--grow-end);
+  }
+}
+@media (max-width: 720px) {
+  .split__art {
+    margin-bottom: clamp(16px, 3vh, 28px);
+  }
+}
+
+/* §4 the loop — cluster the 4 inputs so the arrow always points to the coin */
+.loop {
+  position: relative;
+}
+.loop::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 50%;
+  border-top: 2px dashed var(--wheat-deep);
+  opacity: 0.45;
+  z-index: 0;
+}
+.loop > * {
+  position: relative;
+  z-index: 1;
+}
+.loop__inputs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+.loop__arrow {
+  color: var(--wheat-deep);
+}
+.habit {
+  transition: transform 0.12s var(--ease);
+}
+.habit[data-note]:hover,
+.habit[data-note]:focus-visible {
+  transform: translateY(-2px);
+}
+@media (max-width: 620px) {
+  .loop {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .loop::before {
+    display: none;
+  }
+  .loop__arrow {
+    transform: rotate(90deg);
+    align-self: center;
+  }
+}
+
+/* §5 seasons — seasonal wash, hover lift, the live "now" ribbon */
+.season {
+  position: relative;
+  z-index: 1;
+  transition:
+    transform 0.12s var(--ease),
+    box-shadow 0.12s var(--ease);
+}
+.season:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+.season[data-season='spring'] {
+  background: linear-gradient(180deg, #eef6e6, var(--linen-soft));
+}
+.season[data-season='summer'] {
+  background: linear-gradient(180deg, #fbf0cf, var(--linen-soft));
+}
+.season[data-season='autumn'] {
+  background: linear-gradient(180deg, #f7e3cf, var(--linen-soft));
+}
+.season[data-season='winter'] {
+  background: linear-gradient(180deg, #e7f0f5, var(--linen-soft));
+}
+.season__now {
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6e4f1c;
+  background: var(--wheat);
+  border: 2px solid var(--wheat-deep);
+  border-radius: 999px;
+  padding: 1px 8px;
+  opacity: 0; /* slot reserved on every card; only "now" shows it — no CLS */
+}
+.season.is-now {
+  box-shadow: 0 0 0 2px var(--wheat-deep);
+}
+.season.is-now .season__now {
+  opacity: 1;
+}
+.season b {
+  font-size: var(--fs-400);
+}
+@media (max-width: 520px) {
+  .season-strip {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* §6 market — carved plaque, price legend, calmer "soon" cards */
+.market__plaque {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--bark);
+  background: linear-gradient(180deg, var(--linen-soft), var(--linen));
+  border: var(--frame-thin) solid var(--barn-roof);
+  border-radius: 8px;
+  padding: 4px 14px;
+  margin-bottom: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 3px 0 var(--barn-door);
+}
+.market__legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -6px 0 18px;
+  font-size: var(--fs-200);
+  color: var(--bark); /* dark ink — the legend sits on the light top of the oak board */
+}
+.market__legend .coin {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+.tag--soon {
+  background: var(--wheat-deep);
+  color: #4a361a;
+}
+.card:has(.tag--soon) .card__art > * {
+  filter: saturate(0.7) opacity(0.92);
+}
+@media (max-width: 720px) {
+  .market__grid .card--lg:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* §7 trust — focal CTA with a lantern glow, compact trust-bar, dark focus halo */
+.btn--cta {
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+    0 5px 0 var(--btn-edge),
+    0 0 0 4px rgba(255, 217, 138, 0.16),
+    0 0 36px 6px rgba(255, 217, 138, 0.35);
+}
+.trustbar {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 18px;
+  margin: 18px auto 0;
+  padding: 0;
+}
+.trustbar li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--linen-soft);
+}
+.trustbar__i {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  background: var(--lantern);
+}
+.px-lock {
+  clip-path: polygon(22% 46%, 22% 100%, 78% 100%, 78% 46%, 64% 46%, 64% 28%, 36% 28%, 36% 46%);
+}
+.px-eye {
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 4px var(--plum);
+}
+.px-home {
+  clip-path: polygon(50% 0, 100% 42%, 85% 42%, 85% 100%, 15% 100%, 15% 42%, 0 42%);
+}
+.section--trust :focus-visible,
+.site-footer :focus-visible {
+  outline-color: var(--linen-soft);
+}
+
+/* the sleeping cat's drifting Zzz */
+.pp-zzz span {
+  position: absolute;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--linen-soft);
+  opacity: 0;
+}
+.pp-zzz span:nth-child(1) {
+  font-size: 14px;
+  animation: pp-zzz 3.4s ease-in-out infinite;
+}
+.pp-zzz span:nth-child(2) {
+  font-size: 18px;
+  left: 10px;
+  animation: pp-zzz 3.4s ease-in-out 1.7s infinite;
+}
+@keyframes pp-zzz {
+  0% {
+    transform: translate(0, 0) scale(0.7);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate(10px, -26px) scale(1);
+    opacity: 0;
+  }
+}
+
+/* section seams — soft pixel terrain transitions that stitch the bands together */
+.section--meet,
+.section--trust {
+  position: relative;
+}
+.section--meet::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 16px;
+  background: linear-gradient(180deg, var(--meadow), transparent);
+}
+.section--trust::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 44px;
+  background: linear-gradient(180deg, var(--oak-deep), transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .grow-strip.grown {
+    animation: none;
+    background-position-x: var(--grow-end);
+  }
+  .pp-zzz span {
     animation: none;
   }
 }

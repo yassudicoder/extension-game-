@@ -22,12 +22,13 @@ Per the `read_me.txt` shipped with the basic pack:
 - For open-source projects, include a note that the assets are by Cup Nooble with the
   license terms (this file).
 
-### Animated animals — PixelFarmDEMO
-The grazing **cow** and pecking **chickens** in the hero.
-- ⚠️ **No license file or author credit was included** in the `PixelFarmDEMO/` folder.
-  The adjacent `free version/` pack is by **shubibubi**, so these may be from the same
-  author — **unconfirmed**. Confirm the source and license (and required attribution)
-  before any public/commercial use.
+### Animated animals — Pixel Farm Demo (by Pixels by Skab)
+The grazing **cow** and the pecking/roaming **chickens**.
+**Pixels by Skab** — <https://pixelsbyskab.itch.io/pixel-farm-demo>
+- "Name your own price" pack; the creator states **no generative AI was used** to make it.
+- ⚠️ The page and download include **no explicit written license** (commercial use,
+  attribution, redistribution all unstated). Credit is given here as a courtesy; **confirm
+  usage terms with the creator before any commercial deployment.**
 
 ## Present in the folder but NOT used by the site
 - **free version** — by *shubibubi* (`free version/read me.txt`).

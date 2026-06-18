@@ -2,10 +2,13 @@
 // Pixel item sprites are stamped from the Sprout Lands pack; the cat/dog/bunny are
 // the extension's own sprite sheets. Showcase only — no cart, no real money.
 import { TILES, type TileName, placeTile } from './scene/tileset'
-import { daypart } from './daypart'
+import { daypart, season } from './daypart'
+import { reveal } from './reveal'
 import catUrl from './assets/sprites/cat.png'
 import dogUrl from './assets/sprites/dog.png'
 import bunnyUrl from './assets/sprites/bunny.png'
+import cornGrowUrl from './assets/scene/PixelFarmDEMO/GrowthProcess/Corn_growth.png'
+import lettuceGrowUrl from './assets/scene/PixelFarmDEMO/GrowthProcess/Lettuce_growth.png'
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const PET_URL: Record<string, string> = { cat: catUrl, dog: dogUrl, bunny: bunnyUrl }
@@ -53,13 +56,14 @@ const RESIDENTS = [
 function buildResidents(): void {
   const row = document.getElementById('residents-row')
   if (!row) return
-  for (const r of RESIDENTS) {
+  RESIDENTS.forEach((r, i) => {
     const card = el('div', 'resident')
     const art = el('div', 'resident__art')
     renderPet(art, r.key, 3, true)
     card.append(art, el('h3', undefined, r.name), el('span', 'trait', r.trait), el('p', undefined, r.blurb))
     row.appendChild(card)
-  }
+    reveal(card, i)
+  })
 }
 
 // ---- §3 home vignette ----
@@ -70,29 +74,36 @@ function abs(e: HTMLElement, css: Partial<CSSStyleDeclaration>): void {
 function buildGrows(): void {
   const art = document.getElementById('grows-art')
   if (!art) return
+  // A clean "home of your own" vignette: a tree, the coop, and (added in
+  // decorateSections) a grazing cow — crops grow up in front of them. The dog +
+  // bunny live in §2 and the hero, so they aren't repeated here.
   const tree = el('div')
   placeTile(tree, 'tree', 3)
-  abs(tree, { left: '3%', bottom: '26%' })
+  abs(tree, { left: '3%', bottom: '24%' })
   const coop = el('div')
   placeTile(coop, 'coop', 3)
-  abs(coop, { right: '8%', bottom: '12%' })
-  const bed = el('div')
-  placeTile(bed, 'itemBed', 3)
-  abs(bed, { left: '16%', bottom: '12%' })
-  art.append(tree, coop, bed)
-  abs(renderPet(art, 'dog', 2, true), { left: '40%', bottom: '14%' })
-  abs(renderPet(art, 'bunny', 2, true), { left: '56%', bottom: '12%' })
+  abs(coop, { right: '7%', bottom: '12%' })
+  art.append(tree, coop)
 
-  // crops that sprout up from the soil as the section scrolls into view (idea #4)
-  const crops: TileName[] = ['flower', 'bush', 'sunflower', 'flower', 'pumpkin']
-  const cropEls = crops.map((t, i) => {
-    const c = el('div', 'crop')
-    placeTile(c, t, 2)
-    abs(c, { left: `${9 + i * 17}%`, bottom: '6%', transformOrigin: 'bottom center' })
+  // A row of crops that comes up as the section scrolls into view: two real
+  // sprite GROW-IN strips (corn, lettuce — frame 0 sprout -> frame 3 mature) plus
+  // a few Sprout-Lands props that pop up with a scaleY sprout. Same reveal trigger.
+  const cropEls: HTMLElement[] = []
+  const placeAt = (c: HTMLElement, leftPct: number, i: number) => {
+    abs(c, { left: `${leftPct}%`, bottom: '6%', zIndex: '2', transformOrigin: 'bottom center' })
     c.style.setProperty('--i', String(i))
     art.appendChild(c)
-    return c
+    cropEls.push(c)
+  }
+  placeAt(growStrip(cornGrowUrl, 4, 16, 16, 2), 23, 0)
+  placeAt(growStrip(lettuceGrowUrl, 4, 16, 16, 2), 34, 1)
+  const props: TileName[] = ['sunflower', 'flower', 'pumpkin']
+  props.forEach((t, k) => {
+    const c = el('div', 'crop')
+    placeTile(c, t, 2)
+    placeAt(c, 48 + k * 14, k + 2)
   })
+
   if (reduced) {
     cropEls.forEach((c) => c.classList.add('grown'))
   } else {
@@ -109,6 +120,23 @@ function buildGrows(): void {
     )
     io.observe(art)
   }
+}
+
+/** A crop that animates from sprout (frame 0) to mature (last frame) when `.grown`. */
+function growStrip(url: string, frames: number, fw: number, fh: number, scale: number): HTMLElement {
+  const c = el('div', 'grow-strip')
+  Object.assign(c.style, {
+    width: `${fw * scale}px`,
+    height: `${fh * scale}px`,
+    backgroundImage: `url(${url})`,
+    backgroundRepeat: 'no-repeat',
+    backgroundSize: `${fw * frames * scale}px ${fh * scale}px`,
+    backgroundPositionX: '0px',
+    imageRendering: 'pixelated',
+  })
+  c.style.setProperty('--grow-end', `${-(frames - 1) * fw * scale}px`)
+  c.style.setProperty('--grow-steps', String(frames - 1))
+  return c
 }
 
 // §4 — replace the system emoji (they read "AI-generated") with on-palette icons.
@@ -165,7 +193,7 @@ function setFooterWhen(): void {
 }
 
 // ---- §5 seasons ----
-const SEASONS: { tile: TileName; b: string; s: string }[] = [
+const SEASONS: { tile: TileName; b: 'Spring' | 'Summer' | 'Autumn' | 'Winter'; s: string }[] = [
   { tile: 'flower', b: 'Spring', s: 'blossom & new sprouts' },
   { tile: 'sunflower', b: 'Summer', s: 'long, sunny days' },
   { tile: 'pumpkin', b: 'Autumn', s: 'the harvest festival' },
@@ -174,15 +202,20 @@ const SEASONS: { tile: TileName; b: string; s: string }[] = [
 function buildSeasons(): void {
   const strip = document.getElementById('season-strip')
   if (!strip) return
-  for (const s of SEASONS) {
+  const now = season() // highlight the visitor's real season, like the hero greeting
+  SEASONS.forEach((s, i) => {
     const card = el('div', 'season')
+    card.dataset.season = s.b.toLowerCase()
     const art = el('div', 'season__art')
     const sprite = el('div')
     placeTile(sprite, s.tile, fitScale(s.tile, 54))
     art.appendChild(sprite)
-    card.append(art, el('b', undefined, s.b), el('span', undefined, s.s))
+    const badge = el('span', 'season__now', 'now') // slot always reserved (no CLS)
+    if (s.b === now) card.classList.add('is-now')
+    card.append(badge, art, el('b', undefined, s.b), el('span', undefined, s.s))
     strip.appendChild(card)
-  }
+    reveal(card, i)
+  })
 }
 
 // ---- §6 the market ----
@@ -260,29 +293,76 @@ function makeCard(item: MItem): HTMLElement {
 }
 
 function buildMarket(): void {
+  const board = document.getElementById('market-board')
   const tabsEl = document.getElementById('market-tabs')
   const grid = document.getElementById('market-grid')
-  if (!tabsEl || !grid) return
+  if (!board || !tabsEl || !grid) return
 
-  for (const item of ITEMS) grid.appendChild(makeCard(item))
+  // a carved "Market" plaque echoing the hero sign + footer board
+  board.insertBefore(el('div', 'market__plaque', 'Market'), tabsEl)
 
-  const setCat = (id: string) => {
-    tabsEl.querySelectorAll<HTMLElement>('.tab').forEach((t) =>
-      t.setAttribute('aria-selected', String(t.dataset.id === id)),
-    )
+  ITEMS.forEach((item, i) => {
+    const card = makeCard(item)
+    grid.appendChild(card)
+    reveal(card, i % 6)
+  })
+  grid.setAttribute('role', 'tabpanel')
+  grid.setAttribute('aria-labelledby', 'market-tab-all') // labelled by the active tab
+
+  // a polite live region announces the active filter + count to screen readers
+  const live = el('p', 'sr-only')
+  live.setAttribute('aria-live', 'polite')
+  board.appendChild(live)
+
+  const counts: Record<string, number> = {}
+  for (const c of CATS) counts[c.id] = c.id === 'all' ? ITEMS.length : ITEMS.filter((it) => it.cat === c.id).length
+
+  const tabs: HTMLButtonElement[] = []
+  const setCat = (id: string, focusTab = false) => {
+    tabs.forEach((t) => {
+      const on = t.dataset.id === id
+      t.setAttribute('aria-selected', String(on))
+      t.tabIndex = on ? 0 : -1
+      if (on && focusTab) t.focus()
+    })
     grid.querySelectorAll<HTMLElement>('.card').forEach((c) => {
       c.style.display = id === 'all' || c.dataset.cat === id ? '' : 'none'
     })
+    const label = CATS.find((c) => c.id === id)?.label ?? ''
+    live.textContent = `${counts[id]} ${label} item${counts[id] === 1 ? '' : 's'}`
+    grid.setAttribute('aria-labelledby', `market-tab-${id}`)
   }
-  for (const c of CATS) {
+
+  CATS.forEach((c, idx) => {
     const tab = el('button', 'tab', c.label) as HTMLButtonElement
     tab.type = 'button'
+    tab.id = `market-tab-${c.id}`
     tab.dataset.id = c.id
     tab.setAttribute('role', 'tab')
+    tab.setAttribute('aria-controls', 'market-grid')
     tab.setAttribute('aria-selected', String(c.id === 'all'))
+    tab.tabIndex = c.id === 'all' ? 0 : -1
     tab.addEventListener('click', () => setCat(c.id))
+    tab.addEventListener('keydown', (e) => {
+      let n = -1
+      if (e.key === 'ArrowRight') n = (idx + 1) % CATS.length
+      else if (e.key === 'ArrowLeft') n = (idx - 1 + CATS.length) % CATS.length
+      else if (e.key === 'Home') n = 0
+      else if (e.key === 'End') n = CATS.length - 1
+      if (n >= 0) {
+        e.preventDefault()
+        setCat(CATS[n].id, true)
+      }
+    })
+    tabs.push(tab)
     tabsEl.appendChild(tab)
-  }
+  })
+
+  // one-line reassurance that Biscuits aren't real money
+  const legend = el('p', 'market__legend')
+  legend.innerHTML =
+    '<span class="coin" aria-hidden="true"></span>Prices are in Biscuits you earn in-app — nothing here costs real money.'
+  tabsEl.insertAdjacentElement('afterend', legend)
 }
 
 export function initSections(): void {
