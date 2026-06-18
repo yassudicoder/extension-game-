@@ -530,6 +530,30 @@
   margin-top: var(--space-6);
 }
 
+/* ---- page-wide scattered companions (document-level draggable layer) ---- */
+/* The layer spans the whole page but is pointer-transparent: only the sprites take
+   the pointer, so scrolling + clicks pass straight through everywhere else. */
+.critter-field {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 6; /* above section fills, below the fixed header (20) */
+  pointer-events: none;
+  overflow: hidden; /* a dragged sprite never adds a scrollbar */
+}
+.critter-field .sx2 {
+  pointer-events: auto;
+  image-rendering: pixelated;
+  will-change: transform;
+  touch-action: pan-y; /* keep vertical scroll; grab only on a deliberate drag */
+  -webkit-user-select: none;
+  user-select: none;
+}
+.critter-field .sx2.is-grabbed {
+  cursor: grabbing;
+}
+
 /* critters placed into sections never eat clicks; some hide on small phones */
 .sx-critter {
   pointer-events: none;

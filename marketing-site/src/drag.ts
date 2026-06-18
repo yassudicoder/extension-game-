@@ -85,7 +85,6 @@ export function makeDraggable(el: HTMLElement, h: DragHooks): Dragger {
   let baseX = 0
   let baseY = 0
   let grabT = 0
-  const live = { x: 0, y: 0 }
   let vx = 0 // px/ms, smoothed — drives the lean
   let lastMoveX = 0
   let lastMoveT = 0
@@ -167,10 +166,14 @@ export function makeDraggable(el: HTMLElement, h: DragHooks): Dragger {
       vx = 0
       el.classList.add('is-grabbed')
       h.onGrab?.()
+      // let the page know a real grab happened (the "drag me!" hint listens once)
+      document.dispatchEvent(new CustomEvent('pp-grab'))
     }
 
-    live.x = e.clientX
-    live.y = e.clientY
+    // drive the position straight from the pointer (no rAF latency) so a release
+    // always lands from the exact spot, even between animation frames
+    h.pose.x = baseX + (e.clientX - anchorX)
+    h.pose.y = baseY + (e.clientY - anchorY)
     const now = performance.now()
     const dtm = now - lastMoveT
     if (dtm > 0) {
@@ -205,8 +208,7 @@ export function makeDraggable(el: HTMLElement, h: DragHooks): Dragger {
   const tick = (ts: number, dt: number): void => {
     const p = h.pose
     if (phase === 'grabbed') {
-      p.x = baseX + (live.x - anchorX)
-      p.y = baseY + (live.y - anchorY)
+      // position is set live in pointermove; here we only ease the "held" feel
       p.lift += (LIFT - p.lift) * Math.min(1, dt / 90)
       const tilt = clamp(vx * 6, -16, 16)
       const age = ts - grabT

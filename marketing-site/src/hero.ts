@@ -52,6 +52,78 @@ function spawnHeart(hero: HTMLElement, pet: HTMLElement, calm: boolean): void {
   heart.addEventListener('animationend', () => heart.remove())
 }
 
+// ---- surprises wiring (pond, seeds→chickens, asides) ----
+let pondEl: HTMLElement | null = null
+const lure = { x: 0, until: 0 } // a scatter of seeds the chickens run toward
+
+/** Splash + droplets when something lands on the pond; returns true if it splashed. */
+function maybeSplash(hero: HTMLElement, el: HTMLElement): boolean {
+  if (!pondEl) return false
+  const pr = pondEl.getBoundingClientRect()
+  const r = el.getBoundingClientRect()
+  const cx = r.left + r.width / 2
+  if (cx < pr.left || cx > pr.right || r.bottom < pr.top - 8 || r.bottom > pr.bottom + 34) return false
+  const hr = hero.getBoundingClientRect()
+  const x = cx - hr.left
+  const y = pr.top - hr.top + pr.height * 0.5
+  const ring = document.createElement('span')
+  ring.className = 'pp-splash'
+  ring.style.left = `${x}px`
+  ring.style.top = `${y}px`
+  hero.appendChild(ring)
+  ring.addEventListener('animationend', () => ring.remove())
+  for (const dx of [-12, -4, 6, 14]) {
+    const d = document.createElement('span')
+    d.className = 'pp-drop'
+    d.style.left = `${x}px`
+    d.style.top = `${y}px`
+    d.style.setProperty('--dx', `${dx}px`)
+    d.style.setProperty('--dy', `${-22 - Math.abs(dx)}px`)
+    hero.appendChild(d)
+    d.addEventListener('animationend', () => d.remove())
+  }
+  return true
+}
+
+/** A small hand-written aside floating above an animal. */
+let lastAside = 0
+function speak(hero: HTMLElement, el: HTMLElement, text: string): void {
+  if (reduceMotion) return
+  const now = performance.now()
+  if (now - lastAside < 600) return
+  lastAside = now
+  const hr = hero.getBoundingClientRect()
+  const r = el.getBoundingClientRect()
+  const tag = document.createElement('span')
+  tag.className = 'pp-aside'
+  tag.textContent = text
+  tag.style.left = `${r.left - hr.left + r.width / 2}px`
+  tag.style.top = `${r.top - hr.top + 2}px`
+  hero.appendChild(tag)
+  tag.addEventListener('animationend', () => tag.remove())
+}
+const pick = (xs: string[]): string => xs[(Math.random() * xs.length) | 0]
+
+/** Click bare ground → toss a few seeds; nearby chickens come running to peck. */
+function scatterSeeds(hero: HTMLElement, clientX: number): void {
+  if (reduceMotion) return
+  const hr = hero.getBoundingClientRect()
+  const band = hr.height * 0.86 // near the foreground grass line
+  for (let i = 0; i < 6; i++) {
+    const s = document.createElement('span')
+    s.className = 'pp-seed'
+    s.style.left = `${clientX - hr.left}px`
+    s.style.top = `${band + (Math.random() * 14 - 7)}px`
+    s.style.setProperty('--sx', `${(Math.random() * 44 - 22).toFixed(0)}px`)
+    hero.appendChild(s)
+    s.addEventListener('animationend', (e) => {
+      if ((e as AnimationEvent).animationName === 'pp-seed-fade') s.remove()
+    })
+  }
+  lure.x = clientX - hr.left
+  lure.until = performance.now() + 4500
+}
+
 /**
  * A hero-level layer (above the sign + night tint) that a grabbed animal is
  * reparented into so it rides on top while held. It shares the hero's box exactly
@@ -130,35 +202,6 @@ function stamp(parent: HTMLElement, cls: string, css: Partial<CSSStyleDeclaratio
   return d
 }
 
-/** A wooden homestead building stacked from the Wooden-House roof/wall tiles. */
-function composeBuilding(parent: HTMLElement, css: Partial<CSSStyleDeclaration>, scale: number): HTMLElement {
-  const b = document.createElement('div')
-  b.className = 'bld'
-  Object.assign(b.style, css)
-  for (const row of ['roofTop', 'roofMid', 'roofEave', 'wallMid', 'wallBot'] as TileName[]) {
-    const r = document.createElement('div')
-    placeTile(r, row, scale)
-    b.appendChild(r)
-  }
-  const door = document.createElement('div')
-  door.className = 'bld__door'
-  placeTile(door, 'door', scale)
-  b.appendChild(door)
-  // a warm window beside the door, lit at night
-  const glow = document.createElement('div')
-  glow.className = 'bld__glow'
-  const u = TILE * scale
-  Object.assign(glow.style, {
-    width: `${u * 0.5}px`,
-    height: `${u * 0.4}px`,
-    bottom: `${u * 0.7}px`,
-    left: `${u * 0.42}px`,
-  })
-  b.appendChild(glow)
-  parent.appendChild(b)
-  return b
-}
-
 /** A mature crop sprite: the final frame of a grow strip, parked statically. */
 function matureCrop(parent: HTMLElement, url: string, frames: number, cell: number, scale: number, css: Partial<CSSStyleDeclaration>): HTMLElement {
   const c = document.createElement('div')
@@ -204,62 +247,67 @@ async function buildWorld(): Promise<void> {
   world.insertBefore(far, ground)
   world.insertBefore(mid, fg)
 
-  // ---- FAR: a darkened treeline along the hills (rolling hills are CSS) ----
-  for (let i = 0; i < 7; i++) {
-    const t = prop(far, 'tree', { left: `${2 + i * 15}%`, bottom: '35%' }, 4)
+  // ---- FAR: a sparse, darkened treeline along the hills (hills are CSS) ----
+  for (const leftPct of [4, 26, 48, 70, 90]) {
+    const t = prop(far, 'tree', { left: `${leftPct}%`, bottom: '35%' }, 4)
     t.style.filter = 'brightness(0.82) saturate(0.85)'
   }
 
-  // ---- BG: the homestead — barn, coop, windmill, pond, a market stall ----
-  // The sign card holds the left, so the whole farm is composed in the right half.
-  composeBuilding(bg, { right: '31%', bottom: '30%' }, 4) // the farmhouse/barn
+  // ---- BG: the homestead, spread across the width with room to breathe ----
+  // (the sign is planted in the left third; the farm fans out around it).
+  prop(bg, 'tree', { left: '1%', bottom: '31%' }) // a tree peeking left of the sign
 
-  const coopEl = prop(bg, 'coop', { right: '10%', bottom: '31%' }, 4)
+  const barn = stamp(
+    bg,
+    'barn',
+    { right: '31%', bottom: '29%' },
+    '<div class="barn__roof"></div><div class="barn__loft"></div><div class="barn__body"></div><div class="barn__doors"></div>',
+  )
+  const barnGlow = document.createElement('div')
+  barnGlow.className = 'barn__glow'
+  Object.assign(barnGlow.style, { width: '18px', height: '14px', left: '24px', bottom: '54px' })
+  barn.appendChild(barnGlow)
+
+  prop(bg, 'tree', { right: '44%', bottom: '31%' }, 5) // softens the gap by the sign
+
+  const coopEl = prop(bg, 'coop', { right: '9%', bottom: '30%' }, 4)
   coopEl.style.filter = 'drop-shadow(0 8px 6px rgba(59, 46, 38, 0.28))'
   const coopGlow = document.createElement('div')
   coopGlow.className = 'bld__glow'
-  Object.assign(coopGlow.style, { width: '24px', height: '18px', top: '48%', left: '42%' })
+  Object.assign(coopGlow.style, { width: '22px', height: '16px', top: '50%', left: '42%' })
   coopEl.appendChild(coopGlow)
 
   stamp(
     bg,
     'windmill',
-    { right: '1%', bottom: '31%' },
+    { right: '1%', bottom: '30%' },
     '<div class="windmill__post"></div><div class="windmill__blades"><i></i><i></i><i></i><i></i></div><div class="windmill__hub"></div>',
   )
 
-  prop(bg, 'tree', { right: '42%', bottom: '31%' }) // fills the gap by the sign edge
-  prop(bg, 'tree', { right: '21%', bottom: '33%' }, 5)
+  pondEl = stamp(bg, 'pond', { right: '17%', bottom: '13%' })
+  prop(bg, 'bush', { right: '14%', bottom: '15%' }, 4) // reeds at the pond edge
+  prop(bg, 'flower', { right: '26%', bottom: '15%' }, 3)
 
-  stamp(bg, 'pond', { right: '16%', bottom: '14%' })
-  prop(bg, 'bush', { right: '13%', bottom: '16%' }, 4) // reeds at the pond edge
-  prop(bg, 'flower', { right: '25%', bottom: '16%' }, 3)
+  // a hidden critter: two eyes that blink awake in the far tree only after dark
+  stamp(bg, 'night-critter', { left: '3%', bottom: '37%' }, '<i></i><i></i>')
 
-  stamp(
-    bg,
-    'stall',
-    { right: '5%', bottom: '18%' },
-    '<div class="stall__awning"></div><div class="stall__post stall__post--l"></div><div class="stall__post stall__post--r"></div><div class="stall__counter"></div>',
-  )
-
-  // ---- MID: crop rows, a scarecrow, and a hand-painted signpost ----
-  matureCrop(mid, cornGrowUrl, 4, 16, 3, { right: '36%', bottom: '19%' })
-  matureCrop(mid, cornGrowUrl, 4, 16, 3, { right: '32%', bottom: '19%' })
-  matureCrop(mid, lettuceGrowUrl, 4, 16, 3, { right: '28%', bottom: '18%' })
-  prop(mid, 'sunflower', { right: '24%', bottom: '19%' }, 3)
-  prop(mid, 'pumpkin', { right: '40%', bottom: '17%' }, 3)
+  // ---- MID: a tidy crop patch, a scarecrow, and a hand-painted signpost ----
+  matureCrop(mid, cornGrowUrl, 4, 16, 3, { right: '36%', bottom: '18%' })
+  matureCrop(mid, cornGrowUrl, 4, 16, 3, { right: '33%', bottom: '18%' })
+  matureCrop(mid, lettuceGrowUrl, 4, 16, 3, { right: '30%', bottom: '17%' })
+  prop(mid, 'sunflower', { right: '23%', bottom: '18%' }, 3)
 
   stamp(
     mid,
     'scarecrow',
-    { right: '30%', bottom: '20%' },
+    { right: '39%', bottom: '18%' },
     '<div class="scarecrow__pole"></div><div class="scarecrow__cross"></div><div class="scarecrow__body"></div><div class="scarecrow__head"></div><div class="scarecrow__hat"></div>',
   )
 
   stamp(
     mid,
     'signpost',
-    { right: '41%', bottom: '15%' },
+    { right: '45%', bottom: '14%' },
     '<div class="signpost__pole"></div><div class="signpost__board">Pocket Farm<br>pop. 3 + you</div>',
   )
 
@@ -302,6 +350,7 @@ interface PetCfg {
   bandMax: number
   speed: number
   start: number // 0..1 starting point within the band, so the herd spreads on load
+  say?: string[] // little asides it pipes up with when you pet it
 }
 function petController(pet: HTMLElement, hero: HTMLElement, cfg: PetCfg): void {
   let mode: 'walk' | 'idle' = 'walk'
@@ -351,8 +400,11 @@ function petController(pet: HTMLElement, hero: HTMLElement, cfg: PetCfg): void {
     onTap: () => {
       squashUntil = performance.now() + 170
       spawnHeart(hero, pet, false)
+      if (cfg.say && Math.random() < 0.5) speak(hero, pet, pick(cfg.say))
     },
-    onLand: () => spawnDust(hero, pet),
+    onLand: () => {
+      if (!maybeSplash(hero, pet)) spawnDust(hero, pet)
+    },
   })
 
   const step = (ts: number) => {
@@ -438,9 +490,9 @@ function setupPets(): void {
     pointer.inside = false
   })
 
-  petController(cat, hero, { bandMin: 0.46, bandMax: 0.9, speed: 33, start: 0.15 })
-  petController(dog, hero, { bandMin: 0.5, bandMax: 0.86, speed: 45, start: 0.7 })
-  petController(bunny, hero, { bandMin: 0.55, bandMax: 0.92, speed: 26, start: 0.42 })
+  petController(cat, hero, { bandMin: 0.46, bandMax: 0.9, speed: 33, start: 0.15, say: ['purr.', '♪', 'mrrp?'] })
+  petController(dog, hero, { bandMin: 0.5, bandMax: 0.86, speed: 45, start: 0.7, say: ['woof!', 'walkies?', '!'] })
+  petController(bunny, hero, { bandMin: 0.55, bandMax: 0.92, speed: 26, start: 0.42, say: ['*nibbles*', 'hop hop', '♪'] })
 }
 
 /* ===== animated livestock: a grazing cow + a flock of pecking chickens ===== */
@@ -465,6 +517,8 @@ interface CritterCfg {
   z: number
   notice: boolean // the cow looks up and faces your cursor; chickens stay busy
   clearSign?: boolean // keep big animals out from behind the hero signboard
+  lurable?: boolean // comes running to pecked-out seeds (chickens)
+  say?: string[] // little asides it pipes up with when you pet it
 }
 
 const signEl = document.querySelector<HTMLElement>('.sign')
@@ -519,8 +573,11 @@ function critterController(el: HTMLElement, hero: HTMLElement, cfg: CritterCfg):
     onTap: () => {
       squashUntil = performance.now() + 170
       spawnHeart(hero, el, false)
+      if (cfg.say && Math.random() < 0.55) speak(hero, el, pick(cfg.say))
     },
-    onLand: () => spawnDust(hero, el),
+    onLand: () => {
+      if (!maybeSplash(hero, el)) spawnDust(hero, el)
+    },
   })
 
   const step = (ts: number) => {
@@ -546,7 +603,21 @@ function critterController(el: HTMLElement, hero: HTMLElement, cfg: CritterCfg):
         }
       }
 
-      if (!noticing) {
+      const luring = !!cfg.lurable && performance.now() < lure.until
+      if (!noticing && luring) {
+        // run to the scattered seeds, then peck
+        const target = Math.max(min, Math.min(max, lure.x - (el.offsetWidth || 0) / 2))
+        if (Math.abs(pose.x - target) > 8) {
+          setState('walk')
+          dir = pose.x < target ? 1 : -1
+          pose.x += dir * cfg.speed * 1.8 * (dt / 1000)
+          if (pose.x > max) pose.x = max
+          else if (pose.x < min) pose.x = min
+        } else {
+          setState('idle')
+        }
+        until = performance.now() + 600 // resume normal roam shortly after seeds fade
+      } else if (!noticing) {
         if (ts >= until) {
           if (state === 'walk') {
             setState('idle')
@@ -612,12 +683,16 @@ function setupCritters(): void {
 
   const cow: CritterCfg = {
     walk: COW_WALK, idle: COW_IDLE, scale: 4,
-    bandMin: 0.5, bandMax: 0.82, speed: 15, start: 0.4, bottom: '20%', z: 2, notice: true, clearSign: true,
+    bandMin: 0.5, bandMax: 0.82, speed: 15, start: 0.4, bottom: '20%', z: 2, notice: true, clearSign: true, say: ['moo.', 'mmm.'],
   }
+  const chick = (o: Partial<CritterCfg>): CritterCfg => ({
+    walk: CHICK_WALK, idle: CHICK_PECK, scale: 3, speed: 23, start: 0.2, bottom: '15%', z: 4,
+    bandMin: 0.56, bandMax: 0.82, notice: false, lurable: true, say: ['bok!', 'peck peck', '♪'], ...o,
+  })
   const chicks: CritterCfg[] = [
-    { walk: CHICK_WALK, idle: CHICK_PECK, scale: 3, bandMin: 0.56, bandMax: 0.82, speed: 23, start: 0.2, bottom: '15%', z: 4, notice: false },
-    { walk: CHICK_WALK, idle: CHICK_PECK, scale: 3, bandMin: 0.6, bandMax: 0.9, speed: 19, start: 0.65, bottom: '12%', z: 4, notice: false },
-    { walk: CHICK_WALK, idle: CHICK_PECK, scale: 3, bandMin: 0.5, bandMax: 0.8, speed: 26, start: 0.88, bottom: '17%', z: 4, notice: false },
+    chick({ bandMin: 0.56, bandMax: 0.82, speed: 23, start: 0.2, bottom: '15%' }),
+    chick({ bandMin: 0.6, bandMax: 0.9, speed: 19, start: 0.65, bottom: '12%' }),
+    chick({ bandMin: 0.5, bandMax: 0.8, speed: 26, start: 0.88, bottom: '17%' }),
   ]
   const cfgs = [cow, ...chicks]
 
@@ -671,6 +746,54 @@ function setupParallax(): void {
   hero.addEventListener('pointerleave', () => hero.style.setProperty('--mx', '0'))
 }
 
+/** Click bare ground in the hero → scatter seeds; the chickens come running. */
+function setupGroundPlay(): void {
+  if (reduceMotion) return
+  const hero = document.querySelector<HTMLElement>('.hero')
+  if (!hero) return
+  hero.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement
+    // only bare scenery — never copy, controls, or an animal
+    if (t.closest('.hero__content') || t.closest('.pet') || t.closest('.critter') || t.closest('.world__hold') || t.closest('a, button')) return
+    scatterSeeds(hero, e.clientX)
+  })
+}
+
+/** A one-time hand-drawn "drag me!" doodle that teaches the signature interaction. */
+function setupDragHint(): void {
+  if (reduceMotion) return // dragging isn't offered in the calm scene — don't tease it
+  const hero = document.querySelector<HTMLElement>('.hero')
+  if (!hero) return
+  try {
+    if (localStorage.getItem('pp-hint-dragged')) return // already learned
+  } catch {
+    /* storage blocked — just show it this once */
+  }
+  const hint = document.createElement('div')
+  hint.className = 'drag-hint'
+  hint.setAttribute('aria-hidden', 'true')
+  hint.style.right = '23%'
+  hint.style.bottom = '31%'
+  hint.innerHTML =
+    '<span class="drag-hint__label">psst — pick me up!</span>' +
+    '<svg class="drag-hint__arrow" viewBox="0 0 40 42" fill="none"><path d="M31 5 C 12 9, 7 23, 13 36" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/><path d="M6 28 L13 38 L22 33" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  hero.appendChild(hint)
+  let done = false
+  const dismiss = () => {
+    if (done) return
+    done = true
+    hint.classList.add('drag-hint--gone')
+    try {
+      localStorage.setItem('pp-hint-dragged', '1')
+    } catch {
+      /* ignore */
+    }
+    setTimeout(() => hint.remove(), 600)
+  }
+  document.addEventListener('pp-grab', dismiss, { once: true })
+  setTimeout(dismiss, 14000)
+}
+
 export function initHero(): void {
   const dp = daypart()
   setupDayNight(dp.time)
@@ -680,4 +803,6 @@ export function initHero(): void {
   setupCritters()
   setupAmbient()
   setupParallax()
+  setupGroundPlay()
+  setupDragHint()
 }

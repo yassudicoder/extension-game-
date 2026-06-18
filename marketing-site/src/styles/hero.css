@@ -171,23 +171,77 @@
   image-rendering: pixelated;
 }
 
-/* ---- composed homestead building (barn / farmhouse) ---- */
-.bld {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* ---- the barn: a gambrel-roofed red barn, composed in CSS on the farm palette
+       (no off-palette pack art) so it sits on the same grid as the tiles ---- */
+.barn {
+  width: 156px;
+  height: 162px;
   filter: drop-shadow(0 9px 6px rgba(59, 46, 38, 0.3));
 }
-.bld > * {
-  image-rendering: pixelated;
+.barn__roof {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 156px;
+  height: 84px;
+  background: linear-gradient(180deg, #9a5446 0 46%, var(--barn-roof) 46% 100%);
+  /* gambrel silhouette: a steep lower slope into a shallow upper slope */
+  clip-path: polygon(0% 100%, 5% 56%, 30% 17%, 50% 3%, 70% 17%, 95% 56%, 100% 100%);
 }
-.bld__door {
+.barn__roof::before {
+  /* a pale ridge cap along the very top */
+  content: '';
+  position: absolute;
+  left: 30%;
+  top: 3%;
+  width: 40%;
+  height: 5px;
+  background: rgba(255, 244, 214, 0.35);
+  clip-path: polygon(0% 100%, 50% 0%, 100% 100%);
+}
+.barn__loft {
+  /* hayloft door up in the gable */
+  position: absolute;
+  left: 50%;
+  top: 30px;
+  width: 26px;
+  height: 28px;
+  margin-left: -13px;
+  background: linear-gradient(180deg, var(--barn-door), #4a2820);
+  border: 2px solid #3c211b;
+  border-radius: 3px 3px 0 0;
+  box-shadow: inset 0 0 0 2px rgba(255, 244, 214, 0.12);
+  z-index: 2;
+}
+.barn__body {
+  position: absolute;
+  left: 12px;
+  bottom: 0;
+  width: 132px;
+  height: 92px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 23px, rgba(60, 26, 20, 0.18) 23px 25px),
+    linear-gradient(180deg, #b06151 0 8px, var(--barn) 8px 100%);
+  border: 3px solid var(--barn-roof);
+  box-shadow: inset 0 3px 0 rgba(255, 244, 214, 0.16);
+}
+.barn__doors {
   position: absolute;
   left: 50%;
   bottom: 0;
-  transform: translateX(-50%);
+  width: 58px;
+  height: 64px;
+  margin-left: -29px;
+  background:
+    linear-gradient(90deg, transparent 47%, rgba(60, 26, 20, 0.55) 47% 53%, transparent 53%),
+    linear-gradient(45deg, transparent 44%, rgba(246, 239, 221, 0.5) 44% 50%, transparent 50%),
+    linear-gradient(-45deg, transparent 44%, rgba(246, 239, 221, 0.5) 44% 50%, transparent 50%),
+    linear-gradient(180deg, #6e3c30, var(--barn-door));
+  border: 3px solid #3c211b;
+  border-bottom: 0;
+  border-radius: 5px 5px 0 0;
 }
+.barn__glow,
 .bld__glow {
   position: absolute;
   border-radius: 3px;
@@ -197,6 +251,7 @@
   transition: opacity 1s var(--ease);
   image-rendering: auto;
 }
+:root[data-time='night'] .barn__glow,
 :root[data-time='night'] .bld__glow {
   opacity: 0.95;
 }
@@ -580,6 +635,8 @@
 .pet,
 .critter {
   touch-action: pan-y; /* let vertical scroll start on a sprite; we grab on a deliberate drag */
+  -webkit-user-select: none;
+  user-select: none; /* a drag can never start a text selection */
 }
 .is-grabbed {
   cursor: grabbing;
@@ -608,6 +665,227 @@
   100% {
     opacity: 0;
     transform: translate(calc(-50% + var(--dx, 0px)), -120%) scale(1.4);
+  }
+}
+
+/* ============================ surprises & personality ===================== */
+
+/* the hand-drawn "drag me!" hint — teaches the signature once, then never again */
+.drag-hint {
+  position: absolute;
+  z-index: 12;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: opacity 0.5s var(--ease);
+  animation: hint-bob 2.3s ease-in-out infinite;
+}
+.drag-hint__label {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--bark);
+  background: linear-gradient(180deg, var(--linen-soft), var(--linen));
+  border: 2px solid var(--barn-roof);
+  border-radius: 6px;
+  padding: 3px 9px;
+  transform: rotate(-4deg);
+  box-shadow: 0 2px 0 var(--barn-door);
+  white-space: nowrap;
+}
+.drag-hint__arrow {
+  width: 38px;
+  height: 40px;
+  color: var(--poppy-deep);
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.5));
+}
+.drag-hint--gone {
+  opacity: 0;
+}
+@keyframes hint-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+/* a splash when an animal is dropped onto the pond */
+.pp-splash {
+  position: absolute;
+  width: 30px;
+  height: 14px;
+  border: 2px solid rgba(220, 240, 250, 0.85);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 11;
+  animation: pp-splash 620ms ease-out forwards;
+}
+@keyframes pp-splash {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+  25% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.4);
+  }
+}
+.pp-drop {
+  position: absolute;
+  width: 5px;
+  height: 7px;
+  background: #cdeaf1;
+  border-radius: 0 50% 50% 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+  pointer-events: none;
+  z-index: 11;
+  animation: pp-droplet 560ms ease-out forwards;
+}
+@keyframes pp-droplet {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -26px))) rotate(45deg);
+  }
+}
+
+/* seeds scattered when you click bare ground — chickens come running */
+.pp-seed {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: var(--wheat-deep);
+  border-radius: 50%;
+  transform: translate(-50%, 0);
+  pointer-events: none;
+  z-index: 3;
+  animation:
+    pp-seed-toss 420ms ease-out forwards,
+    pp-seed-fade 4.5s linear forwards;
+}
+@keyframes pp-seed-toss {
+  0% {
+    transform: translate(-50%, -22px) scale(0.6);
+  }
+  100% {
+    transform: translate(calc(-50% + var(--sx, 0px)), 0) scale(1);
+  }
+}
+@keyframes pp-seed-fade {
+  0%,
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* a hidden critter — two eyes blinking in the foliage, only after dark */
+.night-critter {
+  width: 26px;
+  height: 14px;
+  opacity: 0;
+  transition: opacity 1.2s var(--ease);
+}
+:root[data-time='night'] .night-critter {
+  opacity: 1;
+}
+.night-critter i {
+  position: absolute;
+  top: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lantern);
+  box-shadow: 0 0 6px 2px rgba(255, 217, 138, 0.8);
+  animation: night-blink 4.2s ease-in-out infinite;
+}
+.night-critter i:nth-child(1) {
+  left: 4px;
+}
+.night-critter i:nth-child(2) {
+  left: 16px;
+}
+@keyframes night-blink {
+  0%,
+  43%,
+  49%,
+  100% {
+    transform: scaleY(1);
+  }
+  46% {
+    transform: scaleY(0.1);
+  }
+}
+
+/* a little hand-written aside an animal pipes up with now and then */
+.pp-aside {
+  position: absolute;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.72rem;
+  color: var(--bark);
+  background: var(--linen-soft);
+  border: 2px solid var(--barn-roof);
+  border-radius: 7px;
+  padding: 2px 7px;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 12;
+  box-shadow: 0 2px 0 rgba(122, 68, 56, 0.3);
+  animation: pp-aside 2.6s ease-out forwards;
+}
+.pp-aside::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  margin-left: -4px;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid var(--barn-roof);
+}
+@keyframes pp-aside {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -90%) scale(0.85);
+  }
+  12%,
+  78% {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -116%) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drag-hint {
+    animation: none;
+  }
+  .night-critter i,
+  .windmill__blades,
+  .pond::after {
+    animation: none !important;
   }
 }
 
@@ -674,34 +952,42 @@
   align-items: center;
   padding: clamp(96px, 13vh, 150px) clamp(20px, 6vw, 72px) clamp(48px, 10vh, 120px);
 }
+/* A big hand-painted farm signboard PLANTED in the world (two posts into the
+   ground), not a card floating over a scene — so the whole hero reads as one
+   continuous farm. The face stays an opaque painted board for full legibility. */
 .sign {
   position: relative;
-  max-width: 33rem;
+  max-width: 31rem; /* a hair narrower so the farm breathes around it */
   padding: clamp(24px, 4vw, 40px);
-  background: var(--linen-soft); /* parchment panel */
-  border: 6px solid var(--barn); /* chunky wood frame, matching the coop/barn wood */
+  background: linear-gradient(180deg, var(--linen-soft), var(--linen)); /* painted board */
+  border: 6px solid var(--barn); /* chunky wood frame, matching the barn wood */
   border-radius: 8px; /* crafted, not a slick card */
   box-shadow:
     0 0 0 3px var(--barn-roof),
-    /* darker outer wood edge → a double frame */ inset 0 0 0 2px rgba(122, 68, 56, 0.16),
-    var(--shadow-sign);
-  transform-origin: top center;
-  animation: sign-sway 7s ease-in-out infinite;
+    inset 0 0 0 2px rgba(122, 68, 56, 0.16),
+    inset 0 2px 0 rgba(255, 255, 255, 0.6),
+    0 16px 26px -18px rgba(59, 46, 38, 0.5); /* grounded, not floating */
+  transform-origin: 50% 100%; /* creaks from the posts at its base */
+  animation: sign-sway 8s ease-in-out infinite;
 }
+/* two stout posts driving the board into the ground */
 .sign::before,
 .sign::after {
   content: '';
   position: absolute;
-  bottom: 100%;
-  width: 3px;
-  height: clamp(28px, 6vh, 56px);
-  background: rgba(122, 68, 56, 0.4);
+  top: 100%;
+  width: 16px;
+  height: clamp(64px, 11vh, 124px);
+  background: linear-gradient(90deg, var(--oak-deep) 0 3px, var(--oak-mid) 3px 8px, var(--oak) 8px 11px, var(--oak-deep) 11px 16px);
+  border: 2px solid var(--oak-deep);
+  border-top: 0;
+  border-radius: 0 0 3px 3px;
 }
 .sign::before {
-  left: 16%;
+  left: 15%;
 }
 .sign::after {
-  right: 16%;
+  right: 15%;
 }
 .sign__greeting {
   font-family: var(--font-display);
@@ -844,10 +1130,10 @@
 @keyframes sign-sway {
   0%,
   100% {
-    transform: rotate(-0.6deg);
+    transform: rotate(-0.35deg);
   }
   50% {
-    transform: rotate(0.6deg);
+    transform: rotate(0.35deg);
   }
 }
 

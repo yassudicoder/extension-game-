@@ -5,10 +5,12 @@ import './styles/sections.css'
 import { initHero } from './hero'
 import { initSections } from './market'
 import { decorateSections } from './critters'
+import { scatterAnimals } from './scatter'
 
 initHero()
 initSections()
 decorateSections()
+scatterAnimals()
 
 // The wooden header stays put as you scroll (persistent "Add to Chrome"); it just
 // condenses once the hero has scrolled away.

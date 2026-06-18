@@ -39,7 +39,10 @@ The grazing **cow** and the pecking/roaming **chickens**.
 - **ForgottenMemories** — license/author not found in the folder; unconfirmed.
 
 ## Fonts
-- **Fredoka** and **Nunito** — SIL Open Font License, self-hosted (no CDN).
+- **Pixelify Sans** (display) — SIL Open Font License, self-hosted (no CDN). The pixel
+  display face for headings, the wordmark, buttons and labels, to match the pixel art.
+- **Nunito** (body) — SIL Open Font License, self-hosted (no CDN).
+- **Fredoka** — SIL Open Font License, self-hosted; retained only as a display fallback.
 
 ## Pet sprites
 - The cat / dog / bunny are Pocket Pet's own extension sprites.
